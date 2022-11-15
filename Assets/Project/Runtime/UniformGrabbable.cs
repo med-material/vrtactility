@@ -26,11 +26,13 @@ namespace Project.Runtime
 
         private void Update()
         {
+            // Wait for OVR to initialize bones
             if (_boneCapsules is null && handInitializer.isInitialized)
             {
                 _boneCapsules = handInitializer.fingerCapsulesLeftH
                     .Concat(handInitializer.fingerCapsulesRightH)
                     .ToList();
+                SetIsKinematic(false);
             }
             if (_bones is null && handInitializer.isInitialized)
             {
@@ -39,9 +41,16 @@ namespace Project.Runtime
                     .ToList();
             }
             
-            // Update applied pressure for each touching bone
+            // Update applied pressure for each touching bone if any
             for (var i = 0; i < _touchingBoneCapsules.Count; i++)
                 touchingBonePressures[i] = GetAppliedPressure(_touchingBoneCapsules[i]);
+        }
+
+        private void SetIsKinematic(bool state)
+        {
+            // Loop through all Rigidbodies on all OVRBoneCapsules and update their state
+            foreach (var boneCapsule in _boneCapsules)
+                boneCapsule.CapsuleRigidbody.isKinematic = state;
         }
 
         private float GetAppliedPressure(OVRBoneCapsule boneCapsule)
@@ -121,6 +130,11 @@ namespace Project.Runtime
             touchingBonePressures.RemoveAt(_touchingBoneCapsules.IndexOf(bone));
             touchingBoneIds.Remove(GetBoneId(bone));
             _touchingBoneCapsules.Remove(bone);
+            
+            // If no bones are touching we make the hands kinematic briefly to reset potential broken bones
+            if (_touchingBoneCapsules.Count != 0) return;
+            SetIsKinematic(true);
+            SetIsKinematic(false);
         }
     }
 }
