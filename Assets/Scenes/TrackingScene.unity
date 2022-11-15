@@ -542,8 +542,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb3385fc7fd5cae41be572a9ac85e86b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _leftHandSkeleton: {fileID: 458759416}
-  _rightHandSkeleton: {fileID: 38500067}
+  handInitializer: {fileID: 1639653292}
+  touchingBoneIds: 
+  touchingBonePressures: []
 --- !u!114 &1582491694
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -558,6 +559,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseForce: 10
   _restriction: 0
+--- !u!1 &1639653291
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1639653293}
+  - component: {fileID: 1639653292}
+  m_Layer: 0
+  m_Name: HandInitializer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1639653292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1639653291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df1b9b708640c1444bac496e2cc9b544, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  recSkeleton: {fileID: 0}
+  rightHandSkeleton: {fileID: 38500067}
+  leftHandSkeleton: {fileID: 458759416}
+  debugMode: 0
+  isInitialized: 0
+--- !u!4 &1639653293
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1639653291}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1690118098
 PrefabInstance:
   m_ObjectHideFlags: 0
