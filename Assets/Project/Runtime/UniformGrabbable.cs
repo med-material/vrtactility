@@ -15,13 +15,16 @@ namespace Project.Runtime
         private List<OVRBone> _bones;
         private List<OVRBoneCapsule> _boneCapsules;
         private List<OVRBoneCapsule> _touchingBoneCapsules;
+        private Dictionary<OVRSkeleton.BoneId, Vector3> _touchingPointVectors;
 
         [HideInInspector] public List<OVRSkeleton.BoneId> touchingBoneIds;
         [HideInInspector] public List<float> touchingBonePressures;
+        public Vector3 gripVector;
 
         private void Start()
         {
             _touchingBoneCapsules = new List<OVRBoneCapsule>();
+            _touchingPointVectors = new Dictionary<OVRSkeleton.BoneId, Vector3>();
         }
 
         private void Update()
@@ -44,6 +47,22 @@ namespace Project.Runtime
             // Update applied pressure for each touching bone if any
             for (var i = 0; i < _touchingBoneCapsules.Count; i++)
                 touchingBonePressures[i] = GetAppliedPressure(_touchingBoneCapsules[i]);
+            
+            // Calculate union of all collision point vectors to indicate grip distribution
+            gripVector = _touchingPointVectors.Values
+                .Select(vector => vector - transform.position)
+                .Aggregate(Vector3.zero, (current, deltaVector) => current + deltaVector);
+        }
+
+        private void OnCollisionStay(Collision collision)
+        {
+            // Find matching bone
+            var boneCapsule = FindMatchingBone(collision);
+            if (boneCapsule is null) return;  // If the colliding object is not a bone
+            
+            // Update the contact points of each touching OVRBoneCapsule
+            var boneId = GetBoneId(boneCapsule);
+            _touchingPointVectors[boneId] = collision.contacts[0].point;
         }
 
         private void SetIsKinematic(bool state)
@@ -86,8 +105,10 @@ namespace Project.Runtime
                 return;  // Don't add a bone that doesn't exist or is already touching
             
             // Add bone and calculate applied pressure
+            var boneId = GetBoneId(closestBoneCapsule);
             _touchingBoneCapsules.Add(closestBoneCapsule);
-            touchingBoneIds.Add(GetBoneId(closestBoneCapsule));
+            _touchingPointVectors.Add(boneId, collision.contacts[0].point);
+            touchingBoneIds.Add(boneId);
             touchingBonePressures.Add(GetAppliedPressure(closestBoneCapsule));
         }
 
@@ -127,8 +148,10 @@ namespace Project.Runtime
             if (bone is null) return;  // if the colliding object is not an OVRBone
         
             // Remove the colliding OVRBone from list of touching bones and applied pressures
+            var boneId = GetBoneId(bone);
             touchingBonePressures.RemoveAt(_touchingBoneCapsules.IndexOf(bone));
-            touchingBoneIds.Remove(GetBoneId(bone));
+            touchingBoneIds.Remove(boneId);
+            _touchingPointVectors.Remove(boneId);
             _touchingBoneCapsules.Remove(bone);
             
             // If no bones are touching we make the hands kinematic briefly to reset potential broken bones
