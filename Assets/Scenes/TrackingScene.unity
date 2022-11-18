@@ -545,7 +545,7 @@ MonoBehaviour:
   handInitializer: {fileID: 1639653292}
   touchingBoneIds: 
   touchingBonePressures: []
-  gripVector: {x: 0, y: 0, z: 0}
+  isGrabbed: 0
 --- !u!114 &1582491694
 MonoBehaviour:
   m_ObjectHideFlags: 0

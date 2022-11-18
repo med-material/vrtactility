@@ -9,26 +9,34 @@ namespace Project.Runtime
     public class UniformGrabbable : MonoBehaviour
     {
         private const float MATCHING_THRESHOLD = 0.001f;
+        private const float GRABBING_THRESHOLD = 0.3f;
         
         [SerializeField] private HandInitializer handInitializer;
 
+        // Managing touch
         private List<OVRBone> _bones;
         private List<OVRBoneCapsule> _boneCapsules;
         private List<OVRBoneCapsule> _touchingBoneCapsules;
         private Dictionary<OVRSkeleton.BoneId, Vector3> _touchingPointVectors;
 
+        // Exposing touch
         [HideInInspector] public List<OVRSkeleton.BoneId> touchingBoneIds;
         [HideInInspector] public List<float> touchingBonePressures;
-        public Vector3 gripVector;
+
+        // Exposing grab
+        public bool isGrabbed;
 
         private void Start()
         {
             _touchingBoneCapsules = new List<OVRBoneCapsule>();
             _touchingPointVectors = new Dictionary<OVRSkeleton.BoneId, Vector3>();
+
+            isGrabbed = false;
         }
 
         private void Update()
         {
+            Debug.Log(isGrabbed);
             // Wait for OVR to initialize bones
             if (_boneCapsules is null && handInitializer.isInitialized)
             {
@@ -49,9 +57,22 @@ namespace Project.Runtime
                 touchingBonePressures[i] = GetAppliedPressure(_touchingBoneCapsules[i]);
             
             // Calculate union of all collision point vectors to indicate grip distribution
-            gripVector = _touchingPointVectors.Values
+            var gripVector = _touchingPointVectors.Values
                 .Select(vector => vector - transform.position)
                 .Aggregate(Vector3.zero, (current, deltaVector) => current + deltaVector);
+            if (gripVector == Vector3.zero)
+            {
+                isGrabbed = false;
+                return;
+            }
+            gripVector /= _touchingPointVectors.Count;
+
+            // Manage FreeFloatable in accordance with grip
+            Debug.Log(gripVector.magnitude);
+            if (gripVector.magnitude < 0.026)
+                isGrabbed = true;
+            else if (gripVector.magnitude > 0.038)
+                isGrabbed = false;
         }
 
         private void OnCollisionStay(Collision collision)
@@ -158,6 +179,12 @@ namespace Project.Runtime
             if (_touchingBoneCapsules.Count != 0) return;
             SetIsKinematic(true);
             SetIsKinematic(false);
+        }
+
+        [CanBeNull]
+        public Transform GetTouchingHandTransform()
+        {
+            return _touchingBoneCapsules.Count == 0 ? null : _touchingBoneCapsules[0]!.CapsuleRigidbody.transform.parent.parent;
         }
     }
 }

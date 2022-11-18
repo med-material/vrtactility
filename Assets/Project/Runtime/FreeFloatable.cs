@@ -3,6 +3,7 @@ using UnityEngine;
 namespace Project.Runtime
 {
     [RequireComponent(typeof(Rigidbody))]
+    [RequireComponent(typeof(UniformGrabbable))]
     public class FreeFloatable : MonoBehaviour
     {
         [Tooltip("Accasionally moves floatable in front of player head if enabled.")]
@@ -16,16 +17,44 @@ namespace Project.Runtime
         private float _originDistanceFromCenter;
         private Transform _playerHeadTransform;
 
+        private UniformGrabbable _localGrabbable;
+        private Vector3 _relativePosition;
+        private FixedJoint _localFixedJoint;
+
         private void Start()
         {
             _rigidbody = GetComponent<Rigidbody>();
             _originPoint = transform.position;
             _originDistanceFromCenter = Vector3.Distance(new Vector3(_originPoint.x, 0, _originPoint.z), Vector3.zero);
             _playerHeadTransform = GameObject.FindGameObjectWithTag("MainCamera")!.transform;
+
+            _localGrabbable = GetComponent<UniformGrabbable>();
+            _relativePosition = Vector3.zero;
         }
 
         private void FixedUpdate()
         {
+            // var touchingHandTransform = _localGrabbable.GetTouchingHandTransform();
+            // if (!_localGrabbable.isGrabbed) 
+            //     _relativePosition = Vector3.zero;
+            // else if (_relativePosition.Equals(Vector3.zero))
+            //     _relativePosition = transform.position - touchingHandTransform!.position;
+            // if (touchingHandTransform is not null && _relativePosition.Equals(Vector3.zero))
+            // {
+            //     _rigidbody.MovePosition(touchingHandTransform!.position + _relativePosition);
+            //     return;
+            // }
+            if (_localGrabbable.isGrabbed && _localFixedJoint is null)
+            {
+                var touchingHand = _localGrabbable.GetTouchingHandTransform();
+                var joint = gameObject.AddComponent<FixedJoint>();
+                joint.anchor = touchingHand!.position;
+                joint.connectedBody = touchingHand!.GetComponentInParent<Rigidbody>();
+                joint.enableCollision = false;
+                _localFixedJoint = joint;
+            }
+            else if (!_localGrabbable.isGrabbed) _localFixedJoint = null;
+
             if (moveWithPlayerHead)
             {
                 // Calculate the the ball position in the player's field of view
@@ -49,11 +78,6 @@ namespace Project.Runtime
             var movementVector = distanceVector * (_baseForce * (1f - _restriction));
             _rigidbody.AddForce(movementVector, ForceMode.Impulse);
             _rigidbody.velocity *= distanceVector.magnitude;
-        }
-
-        public void RestrictMovement(float value)
-        {
-            _restriction = value;
         }
     }
 }
