@@ -22,14 +22,12 @@ public class UniformGrabbable : MonoBehaviour
     [HideInInspector] public List<float> touchingBonePressures;
 
     // Exposing grab
-    public bool isGrabbed;
+    [HideInInspector] public bool isGrabbed = false;
 
     private void Start()
     {
         _touchingBoneCapsules = new List<OVRBoneCapsule>();
         _touchingPointVectors = new Dictionary<OVRSkeleton.BoneId, Vector3>();
-
-        isGrabbed = false;
     }
 
     private void Update()

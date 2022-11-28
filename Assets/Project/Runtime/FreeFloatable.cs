@@ -46,6 +46,7 @@ public class FreeFloatable : MonoBehaviour
         {
             var touchingHand = _localGrabbable.GetTouchingHandRoot();
             var joint = gameObject.AddComponent<FixedJoint>();
+            
             joint.anchor = touchingHand!.position;
             joint.connectedBody = touchingHand!.GetComponentInParent<Rigidbody>();
             joint.enableCollision = false;
@@ -56,7 +57,9 @@ public class FreeFloatable : MonoBehaviour
         else if (!_localGrabbable.isGrabbed && _localFixedJoint is not null)
         {
             var touchingHand = _localGrabbable.GetTouchingHandRoot();
-            touchingHand!.isKinematic = false;
+            if (!touchingHand) return;
+            
+            touchingHand.isKinematic = false;
             Destroy(_localFixedJoint);
             _localFixedJoint = null;
             //_rigidbody.mass = 1;
