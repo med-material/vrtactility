@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -20,11 +17,14 @@ public class DebugGribVisualizer : MonoBehaviour
 
     private void Update()
     {
+        if (_ug.touchingBonePressures.Count == 0) return;
+        
         // Calculate total pressure being applied
-        var totalPressure = _ug.touchingBonePressures.Sum()/* / _ug.touchingBonePressures.Count*/;
+        var maxPressure = _ug.touchingBonePressures.Max()/* / _ug.touchingBonePressures.Count*/;
+        Debug.Log(maxPressure);
         
         // Transpose into rgb range and apply to material
-        var range = Mathf.Clamp01(totalPressure / 10f);
+        var range = Mathf.Clamp01(maxPressure / 10f);
         _renderer.material.SetColor(Color1, new Color(range, 0f, 0f));
     }
 }

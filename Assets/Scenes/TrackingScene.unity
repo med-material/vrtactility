@@ -543,6 +543,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb3385fc7fd5cae41be572a9ac85e86b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pressureThreshold: 0.5
   handInitializer: {fileID: 1639653292}
   touchingBoneIds: 
   touchingBonePressures: []
