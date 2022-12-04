@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -20,11 +17,10 @@ public class DebugGribVisualizer : MonoBehaviour
 
     private void Update()
     {
-        // Calculate total pressure being applied
-        var totalPressure = _ug.touchingBonePressures.Sum()/* / _ug.touchingBonePressures.Count*/;
+        if (_ug.touchingBonePressures.Count == 0) return;
         
-        // Transpose into rgb range and apply to material
-        var range = Mathf.Clamp01(totalPressure / 10f);
-        _renderer.material.SetColor(Color1, new Color(range, 0f, 0f));
+        // Calculate total pressure being applied and update sphere material color
+        var maxPressure = _ug.touchingBonePressures.Max()/* / _ug.touchingBonePressures.Count*/;
+        _renderer.material.SetColor(Color1, new Color(maxPressure, 0f, 0f));
     }
 }

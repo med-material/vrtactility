@@ -1,15 +1,19 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
 
-[RequireComponent(typeof(Collider))]
+[RequireComponent(typeof(SphereCollider))]
 public class UniformGrabbable : MonoBehaviour
 {
     private const float MATCHING_THRESHOLD = 0.001f;
-    private const float GRABBING_THRESHOLD = 0.3f;
-    
+
+    [Tooltip("The amount of pressure which must be applied for the ball to be grabbed")]
+    [Range(0.1f, 1.0f)] public float pressureThreshold;
     [SerializeField] private HandInitializer handInitializer;
+
+    private SphereCollider _sphereCollider;
 
     // Managing touch
     private List<OVRBone> _bones;
@@ -26,6 +30,10 @@ public class UniformGrabbable : MonoBehaviour
 
     private void Start()
     {
+        _sphereCollider = GetComponent<SphereCollider>();
+
+        if (pressureThreshold > _sphereCollider.radius) pressureThreshold = _sphereCollider.radius;
+        
         _touchingBoneCapsules = new List<OVRBoneCapsule>();
         _touchingPointVectors = new Dictionary<OVRSkeleton.BoneId, Vector3>();
     }
@@ -49,6 +57,7 @@ public class UniformGrabbable : MonoBehaviour
         }
         
         // Update applied pressure for each touching bone if any
+        // TODO: Optimize this to only loop through finger tips
         for (var i = 0; i < _touchingBoneCapsules.Count; i++)
             touchingBonePressures[i] = GetAppliedPressure(_touchingBoneCapsules[i]);
         
@@ -91,26 +100,31 @@ public class UniformGrabbable : MonoBehaviour
 
     private float GetAppliedPressure(OVRBoneCapsule boneCapsule)
     {
-        // Find corresponding OVRBone and calculate applied pressure as distance between the two transforms
-        var bone = _bones[GetBoneIndex(boneCapsule)];
-        var bonePosition = bone.Transform.position;
-        var boneCapsulePosition = boneCapsule.CapsuleCollider.transform.position;
-        var distance = Vector3.Distance(bonePosition, boneCapsulePosition);
-        
+        // Find corresponding OVRBone (which doesn't collide with the sphere surface) and its position
+        var targetBone = _bones[GetBoneIndex(boneCapsule)];
+        var bonePosition = targetBone.Transform.position;
+
+        // Calculate distance between bone and sphere center and project that into a pressure value between 0 and 1
+        var distance = Mathf.Sqrt((bonePosition - transform.position).sqrMagnitude);
+        var pressure = Mathf.Clamp(0.05f - distance, 0, 0.05f) / 0.05f;
+
         // Return distance as pressure applied
-        return distance;
+        return pressure;
     }
 
     private int GetBoneIndex(OVRBoneCapsule boneCapsule)
     {
         // Find out what hand boneCapsule belongs to in order to index properly
         var isLeftHand = IsLeftHand(_boneCapsules.IndexOf(boneCapsule));
-        var indexOffset = isLeftHand ? _bones.Count / 2 : 0;
+        var indexOffset = isLeftHand ? 0 : _bones.Count / 2;
         return indexOffset + boneCapsule.BoneIndex;
     }
     
     private bool IsLeftHand(int index)
     {
+        if (index < 0 || index >= _boneCapsules.Count)
+            throw new IndexOutOfRangeException(
+                "Parameter cannot be greater than the number of bone capsules or less than zero");
         return index < _boneCapsules.Count / 2;
     }
 

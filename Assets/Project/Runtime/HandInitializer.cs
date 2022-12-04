@@ -32,7 +32,6 @@ public class HandInitializer : MonoBehaviour
             }
             actionToDo.Invoke();
         }
-
     }
 
     public void InitializeSkeleton()

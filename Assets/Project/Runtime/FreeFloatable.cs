@@ -16,7 +16,6 @@ public class FreeFloatable : MonoBehaviour
     private Transform _playerHeadTransform;
 
     private UniformGrabbable _localGrabbable;
-    private Vector3 _relativePosition;
     private FixedJoint _localFixedJoint;
 
     private void Start()
@@ -25,23 +24,11 @@ public class FreeFloatable : MonoBehaviour
         _originPoint = transform.position;
         _originDistanceFromCenter = Vector3.Distance(new Vector3(_originPoint.x, 0, _originPoint.z), Vector3.zero);
         _playerHeadTransform = GameObject.FindGameObjectWithTag("MainCamera")!.transform;
-
         _localGrabbable = GetComponent<UniformGrabbable>();
-        _relativePosition = Vector3.zero;
     }
 
     private void FixedUpdate()
     {
-        // var touchingHandTransform = _localGrabbable.GetTouchingHandTransform();
-        // if (!_localGrabbable.isGrabbed) 
-        //     _relativePosition = Vector3.zero;
-        // else if (_relativePosition.Equals(Vector3.zero))
-        //     _relativePosition = transform.position - touchingHandTransform!.position;
-        // if (touchingHandTransform is not null && _relativePosition.Equals(Vector3.zero))
-        // {
-        //     _rigidbody.MovePosition(touchingHandTransform!.position + _relativePosition);
-        //     return;
-        // }
         if (_localGrabbable.isGrabbed && _localFixedJoint is null)
         {
             var touchingHand = _localGrabbable.GetTouchingHandRoot();
@@ -52,7 +39,6 @@ public class FreeFloatable : MonoBehaviour
             joint.enableCollision = false;
             _localFixedJoint = joint;
             touchingHand!.isKinematic = true;
-            //_rigidbody.mass = 100;
         }
         else if (!_localGrabbable.isGrabbed && _localFixedJoint is not null)
         {
@@ -62,7 +48,6 @@ public class FreeFloatable : MonoBehaviour
             touchingHand.isKinematic = false;
             Destroy(_localFixedJoint);
             _localFixedJoint = null;
-            //_rigidbody.mass = 1;
         }
 
         if (moveWithPlayerHead)
@@ -76,7 +61,7 @@ public class FreeFloatable : MonoBehaviour
 
             if (dot < 0.4f)
             {
-                // move the ball in front of the player
+                // Move the ball in front of the player
                 var newPosition = Vector3.Normalize(forward) * _originDistanceFromCenter;
                 newPosition.y = _originPoint.y;
                 _originPoint = newPosition;
