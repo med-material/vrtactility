@@ -100,15 +100,13 @@ public class UniformGrabbable : MonoBehaviour
 
     private float GetAppliedPressure(OVRBoneCapsule boneCapsule)
     {
-        // Find corresponding OVRBone and calculate applied pressure as distance between the two transforms
+        // Find corresponding OVRBone (which doesn't collide with the sphere surface) and its position
         var targetBone = _bones[GetBoneIndex(boneCapsule)];
-        var bonePosition = transform.TransformPoint(targetBone.Transform.position);
-        // var boneCapsulePosition = boneCapsule.CapsuleCollider.transform.position;
-        // var distance = Vector3.Distance(bonePosition, boneCapsulePosition);
-        // var touchingHand = IsLeftHand(_boneCapsules.IndexOf(boneCapsule))
-        //     ? handInitializer.leftHandSkeleton
-        //     : handInitializer.rightHandSkeleton;
-        var pressure = /*Mathf.Clamp01(pressureThreshold - */Vector3.Distance(bonePosition, transform.position)/*)*/;
+        var bonePosition = targetBone.Transform.position;
+
+        // Calculate distance between bone and sphere center and project that into a pressure value between 0 and 1
+        var distance = Mathf.Sqrt((bonePosition - transform.position).sqrMagnitude);
+        var pressure = Mathf.Clamp(0.05f - distance, 0, 0.05f) / 0.05f;
 
         // Return distance as pressure applied
         return pressure;

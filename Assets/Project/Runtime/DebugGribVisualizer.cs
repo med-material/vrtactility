@@ -20,8 +20,8 @@ public class DebugGribVisualizer : MonoBehaviour
         if (_ug.touchingBonePressures.Count == 0) return;
         
         // Calculate total pressure being applied
-        var maxPressure = _ug.touchingBonePressures.Max()/* / _ug.touchingBonePressures.Count*/;
-        Debug.Log(maxPressure);
+        var maxPressure = _ug.touchingBonePressures.Min()/* / _ug.touchingBonePressures.Count*/;
+        //Debug.Log(maxPressure);
         
         // Transpose into rgb range and apply to material
         var range = Mathf.Clamp01(maxPressure / 10f);
