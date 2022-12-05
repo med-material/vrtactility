@@ -25,8 +25,15 @@ public class ConnectDevice : MonoBehaviour
 
     private void Awake()
     {
-        
+        Remap = new int[32] { 30, 27, 29, 28, 25, 31, 32, 26, 17, 18, 20, 1, 2, 22, 19, 3, 23, 21, 24, 4, 5, 8, 9, 6, 7, 10, 13, 14, 11, 12, 15, 16 };
+        Remap2 = new PadScript.Pad[32];
+
+        for (int i = 0; i < Remap2.Length; i++) {
+            Remap2[i] = new PadScript.Pad(i + 1, Remap[i], 0.5f, 100, 50);
+            //print("Remap: " + Remap2[i].Remap + "PulseWidth: " + Remap2[i].PulseWidth);
+        }
     }
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -38,16 +45,6 @@ public class ConnectDevice : MonoBehaviour
         //glovePort.Parity = Parity.None;
         //glovePort.StopBits = StopBits.One;
         //glovePort.Handshake = Handshake.None;
-
-        Remap = new int[32] { 30, 27, 29, 28, 25, 31, 32, 26, 17, 18, 20, 1, 2, 22, 19, 3, 23, 21, 24, 4, 5, 8, 9, 6, 7, 10, 13, 14, 11, 12, 15, 16 };
-        Remap2 = new PadScript.Pad[32];
-
-        for (int i = 0; i < Remap2.Length; i++) {
-            Remap2[i] = new PadScript.Pad(i + 1, Remap[i], 0.5f, 100, 50);
-            //print("Remap: " + Remap2[i].Remap + "PulseWidth: " + Remap2[i].PulseWidth);
-        }
-        
-
     }
 
     // Update is called once per frame
@@ -81,7 +78,7 @@ public class ConnectDevice : MonoBehaviour
 
     }
 
-    public PadScript.Pad GetPadsInfo(int i) {
+    public static PadScript.Pad GetPadsInfo(int i) {
         return Remap2[i];
     }
 
