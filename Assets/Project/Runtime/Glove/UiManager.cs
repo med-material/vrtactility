@@ -30,6 +30,7 @@ public class UiManager : MonoBehaviour
     private string stringStart = "Re:[] battery *capacity=";
     private string SaveDocumentPath = Application.streamingAssetsPath + "/Calibration_Saved_Data/" + "CalibrationSave" + ".txt";
     private string separation = "/";
+    [SerializeField] private CalibrationScriptableObject cd;
 
     private void Awake()
     {
@@ -205,6 +206,8 @@ public class UiManager : MonoBehaviour
             File.AppendAllText(SaveDocumentPath, text + "\n");
         }
 
+        // Save data to CalibrationScriptableObject instance
+        cd.values = ConnectDevice.Remap2.ToList();
     }
 
     public void ReadSaveFile()

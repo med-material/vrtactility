@@ -637,6 +637,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 008db7ff1c320684d8ff1d1517efc47a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  calibrationData: {fileID: 11400000, guid: 9ec19171666b50b4abee51d16b5c3215, type: 2}
 --- !u!1001 &1690118098
 PrefabInstance:
   m_ObjectHideFlags: 0
