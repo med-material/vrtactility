@@ -217,6 +217,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4090909167993296294, guid: b6d1d2a2b4b736143be88ff6c8f6d477,
         type: 3}
+      propertyPath: cd
+      value: 
+      objectReference: {fileID: 11400000, guid: 9ec19171666b50b4abee51d16b5c3215,
+        type: 2}
+    - target: {fileID: 4090909167993296294, guid: b6d1d2a2b4b736143be88ff6c8f6d477,
+        type: 3}
       propertyPath: ComPortBox
       value: 
       objectReference: {fileID: 1474064327}

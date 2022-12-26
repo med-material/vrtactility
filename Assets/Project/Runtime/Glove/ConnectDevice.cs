@@ -22,6 +22,7 @@ public class ConnectDevice : MonoBehaviour
     //private float time;
     //private int index = 0;
     //private bool done = false;
+    [SerializeField] private CalibrationScriptableObject cd;
 
     private void Awake()
     {
@@ -141,6 +142,8 @@ public class ConnectDevice : MonoBehaviour
             {
                 ConnectingText.alpha = 0;
             }
+
+            cd.port = ComPortBox.text;
         }
         catch
         {

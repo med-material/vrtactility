@@ -5,4 +5,5 @@ using UnityEngine;
 public class CalibrationScriptableObject : ScriptableObject
 {
     public List<PadScript.Pad> values = new List<PadScript.Pad>();
+    public string port;
 }

@@ -1,5 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO.Ports;
+using System.Linq;
 using UnityEngine;
 
 public class TactilityManager : MonoBehaviour
@@ -8,9 +11,10 @@ public class TactilityManager : MonoBehaviour
     private List<PadScript.Pad> _pads;
     
     private UniformGrabbable _ug;
+    private SerialPort _glovePort;
     
-    private bool _stimOn = false;
-    private bool _portWriteInProgress = false;
+    private bool _portWriteInProgress;
+    private float[] _prevValueBatch;
 
     private void Awake()
     {
@@ -18,36 +22,72 @@ public class TactilityManager : MonoBehaviour
         //       This would be done by the other scene, but should be done here for debugging purposes
         //       It looks like a persistent instance of UiManager must be kept between he scenes, and it might already
         //       Be set to not destroy on load but it seems like a mess
-        return;
+        _pads = calibrationData.values;
+
+        // Use previously initialized glove port if it exists
+        if (ConnectDevice.connectedMessage is "Re:[] new connection" or "Re:[] re-connection")
+        {
+            _glovePort = ConnectDevice.glovePort;
+            return;
+        }
+        _glovePort = new SerialPort();
+            
+        try
+        {
+            // NOTE: Code is predominantly from ConnectDevice
+            _glovePort.PortName = "COM" + calibrationData.port;
+            print(_glovePort.PortName);
+            _glovePort.BaudRate = 115200;
+            _glovePort.DataBits = 8;
+            _glovePort.Parity = Parity.None;
+            _glovePort.StopBits = StopBits.One;
+            _glovePort.Handshake = Handshake.None;
+            
+            // Open the glove port and do a series of cascading writes to it
+            _glovePort.Open();
+            WriteToPort("iam TACTILITY", 200, () =>
+            {
+                print(_glovePort.ReadLine());
+                WriteToPort("elec 1 *pads_qty 32", 200, () =>
+                {
+                    print(_glovePort.ReadLine());
+                    WriteToPort("battery ?", 200, () =>
+                    {
+                        print(_glovePort.ReadLine());
+                        WriteToPort("freq 50", 200, () =>
+                        {
+                            print(_glovePort.ReadLine());
+                            WriteToPort("stim on", 200);
+                        });
+                    });
+                });
+            });
+        }
+        catch
+        {
+            // If any error happens at any point in the initialization
+            print("Could not connect to device");
+            _glovePort.Close();
+        }
     }
 
     private void Start()
     {
-        _pads = calibrationData.values;
         _ug = FindObjectOfType<UniformGrabbable>();
+        
+        _portWriteInProgress = false;
     }
 
     private void Update()
     {
-        switch (_stimOn)
-        {
-            // Manage stim on / off commands and state
-            case true when _ug.touchingBoneIds.Count == 0:
-                _stimOn = false;
-                UpdateStimState();
-                break;
-            case false when _ug.touchingBoneIds.Count > 0:
-                _stimOn = true;
-                UpdateStimState();
-                break;
-        }
-        if (!_stimOn) return;
-
+        if (_portWriteInProgress) return;
+        
         // Update stimuli for each touching finger bone of interest
         var valueBatch = new float[5];
         for (var i = 0; i < _ug.touchingBoneIds.Count; i++)
         {
             var pressure = _ug.touchingBonePressures[i];
+            // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
             switch (_ug.touchingBoneIds[i])
             {
                 case OVRSkeleton.BoneId.Hand_Thumb3:
@@ -67,53 +107,87 @@ public class TactilityManager : MonoBehaviour
                     break;
             }
         }
-        BatchWriteToPort(valueBatch);
+
+        // If the new values are identical to the old ones and their sum is zero then we reject them
+        if (_portWriteInProgress ||
+            (valueBatch.All(value => value == 0) 
+            && _prevValueBatch != null 
+            && _prevValueBatch.All(value => value == 0))) return;
+        _prevValueBatch = valueBatch;
+        
+        // Generate the command string and send it to the box
+        var commandString = GenerateCommandString(valueBatch);
+        WriteToPort(commandString);
+    }
+
+    private string GenerateCommandString(IReadOnlyList<float> pressureValues)
+    {
+        var completeString = "";
+        
+        const string invariablePart1 = "velec 11 *special_anodes 1 *name test *elec 1 *pads ";
+        const string invariablePart2 = " *amp ";
+        const string invariablePart3 = " *width ";
+        var finalPart = pressureValues.All(value => value == 0)  // If sum is zero then we disable all electrodes
+            ? " *selected 0 *sync 0\r\n" 
+            : " *selected 1 *sync 0\r\n";
+
+        var variablePart1 = "";
+        var variablePart2 = "";
+        var variablePart3 = "";
+
+        for (var i = 0; i < 32; i++)
+        {
+            // Use remap value to determine which finger pressure value we use
+            var pressureValue = i switch
+            {
+                < 8 => pressureValues[0],
+                < 21 => pressureValues[1],
+                < 26 => pressureValues[2],
+                < 31 => pressureValues[3],
+                _ => pressureValues[4]
+            };
+
+            variablePart1 += _pads[i].Remap + "=C,";
+            variablePart2 += _pads[i].Remap + "=" + 
+                             _pads[i].GetAmplitude() * pressureValue + ",";
+            variablePart3 += _pads[i].GetRemap() + "=" + 
+                             _pads[i].GetPulseWidth() * pressureValue + ",";
+        }
+
+        // Build final string and return
+        completeString = invariablePart1 
+                         + variablePart1 
+                         + invariablePart2 
+                         + variablePart2 
+                         + invariablePart3 
+                         + variablePart3 
+                         + finalPart;
+        return completeString;
+    }
+    
+    private void WriteToPort(string command, int timeout = 100, Action callback = null)
+    {
+        // NOTE: This is an attempt to port the Thread.Sleep logic from the UiManager into coroutines, since this would
+        //       otherwise freeze game execution completely if done in the VR scene (from my understanding)...
+        // if (_portWriteInProgress) return;
+        _portWriteInProgress = true;
+        
+        IEnumerator WriteTimeout()
+        {
+            // Debug.Log(command);
+            _glovePort.Write(command + "\r\n");                                 // Write command to glove box
+            yield return new WaitForSeconds(seconds: (float)timeout / 1_000);   // Wait for specified amount of seconds
+            _portWriteInProgress = false;                                       // Start listening for new commands again
+            callback?.Invoke();                                                 // Invoke the provided callback if any
+        }
+        StartCoroutine(WriteTimeout());
     }
 
     private void OnDisable()
     {
-        // TODO: Clean up ports and whatever other stuff there might be like in the other scene...
-        return;
-    }
-
-    private void UpdateStimState()
-    {
-        WriteToPort(_stimOn ? "stim on" : "stim off", 150);
-    }
-
-    private void BatchWriteToPort(IReadOnlyList<float> values, int timeout = 100)
-    {
-        // NOTE: I don't know how to stimulate multiple different pads simultaneously.
-        //       In lieu of more info, this method and subsequent "ApplyStimuli" implementation will likely need change.
-        for (var i = 0; i < values.Count; i++)
-        {
-            ApplyStimuli(i, values[i], i == values.Count - 1 ? timeout : 10);
-        }
-    }
-
-    private void ApplyStimuli(int index, float pressure, int timeout = 100)
-    {
-        WriteToPort("velec 11 *special_anodes 1 *name test *elec 1 *pads " + _pads[index].GetRemap() * pressure + "=C, *amp " + _pads[index].GetRemap() * pressure + "=" + _pads[index].GetAmplitude() * pressure + ", *width " + _pads[index].GetRemap() * pressure + "=" + _pads[index].GetPulseWidth() * pressure + ", *selected 1 *sync 0", timeout);
-    }
-    
-    private void WriteToPort(string command, int timeout = 100)
-    {
-        // NOTE: This is an attempt to port the Thread.Sleep logic from the UiManager into coroutines, since this would
-        //       otherwise freeze game execution completely if done in the VR scene (from my understanding)...
-        if (_portWriteInProgress) return;
-        _portWriteInProgress = true;
-        
-        var prevStimState = _stimOn;
-        IEnumerator WriteTimeout()
-        {
-            ConnectDevice.glovePort.Write(command + "\r\n");
-
-            yield return new WaitForSeconds(seconds: timeout / 1_000);
-            
-            if (_stimOn != prevStimState) UpdateStimState();
-            _portWriteInProgress = false;
-        }
-
-        StartCoroutine(WriteTimeout());
+        // Disable stim and close the glove port after the timeout using the callback function
+        // WriteToPort("stim off", callback:() => _glovePort.Close());
+        _glovePort.Write("stim off\r\n");
+        _glovePort.Close();
     }
 }
