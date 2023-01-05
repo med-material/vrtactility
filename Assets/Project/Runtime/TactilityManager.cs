@@ -34,6 +34,7 @@ public class TactilityManager : MonoBehaviour
             
         try
         {
+            // This path is currently non-functional
             // NOTE: Code is predominantly from ConnectDevice
             _glovePort.PortName = "COM" + calibrationData.port;
             print(_glovePort.PortName);
@@ -109,10 +110,9 @@ public class TactilityManager : MonoBehaviour
         }
 
         // If the new values are identical to the old ones and their sum is zero then we reject them
-        if (_portWriteInProgress ||
-            (valueBatch.All(value => value == 0) 
+        if (valueBatch.All(value => value == 0) 
             && _prevValueBatch != null 
-            && _prevValueBatch.All(value => value == 0))) return;
+            && _prevValueBatch.All(value => value == 0)) return;
         _prevValueBatch = valueBatch;
         
         // Generate the command string and send it to the box
@@ -140,18 +140,17 @@ public class TactilityManager : MonoBehaviour
             // Use remap value to determine which finger pressure value we use
             var pressureValue = i switch
             {
-                < 8 => pressureValues[0],
+                < 8  => pressureValues[0],
                 < 21 => pressureValues[1],
                 < 26 => pressureValues[2],
                 < 31 => pressureValues[3],
-                _ => pressureValues[4]
+                _    => pressureValues[4]  // == 31
             };
+            // if (i < 8) Debug.Log(_pads[i].GetAmplitude() * pressureValue);
 
-            variablePart1 += _pads[i].Remap + "=C,";
-            variablePart2 += _pads[i].Remap + "=" + 
-                             _pads[i].GetAmplitude() * pressureValue + ",";
-            variablePart3 += _pads[i].GetRemap() + "=" + 
-                             _pads[i].GetPulseWidth() * pressureValue + ",";
+            variablePart1 += _pads[i].GetRemap() + "=C,";
+            variablePart2 += _pads[i].GetRemap() + "=" + _pads[i].GetAmplitude() * pressureValue + ",";
+            variablePart3 += _pads[i].GetRemap() + "=" + _pads[i].GetPulseWidth() + ",";
         }
 
         // Build final string and return
@@ -165,7 +164,7 @@ public class TactilityManager : MonoBehaviour
         return completeString;
     }
     
-    private void WriteToPort(string command, int timeout = 100, Action callback = null)
+    private void WriteToPort(string command, int timeout = 1000, Action callback = null)
     {
         // NOTE: This is an attempt to port the Thread.Sleep logic from the UiManager into coroutines, since this would
         //       otherwise freeze game execution completely if done in the VR scene (from my understanding)...
