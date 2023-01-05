@@ -127,7 +127,7 @@ public class TactilityManager : MonoBehaviour
         const string invariablePart1 = "velec 11 *special_anodes 1 *name test *elec 1 *pads ";
         const string invariablePart2 = " *amp ";
         const string invariablePart3 = " *width ";
-        var finalPart = pressureValues.All(value => value == 0)  // If sum is zero then we disable all electrodes
+        var finalPart = false // pressureValues.All(value => value == 0)  // If sum is zero then we disable all electrodes
             ? " *selected 0 *sync 0\r\n" 
             : " *selected 1 *sync 0\r\n";
 
@@ -147,9 +147,10 @@ public class TactilityManager : MonoBehaviour
                 _    => pressureValues[4]  // == 31
             };
             // if (i < 8) Debug.Log(_pads[i].GetAmplitude() * pressureValue);
+            if (i > 1) continue;
 
             variablePart1 += _pads[i].GetRemap() + "=C,";
-            variablePart2 += _pads[i].GetRemap() + "=" + _pads[i].GetAmplitude() * pressureValue + ",";
+            variablePart2 += _pads[i].GetRemap() + "=" + _pads[i].GetAmplitude() /** pressureValue*/ + ",";
             variablePart3 += _pads[i].GetRemap() + "=" + _pads[i].GetPulseWidth() + ",";
         }
 
@@ -162,6 +163,12 @@ public class TactilityManager : MonoBehaviour
                          + variablePart3 
                          + finalPart;
         return completeString;
+        // return "velec 11 *special_anodes 1 *name test *elec 1 *pads " +
+        //        _pads[0].GetRemap() + "=C, *amp " +
+        //        _pads[0].GetRemap() + "=" +
+        //        _pads[0].GetAmplitude() + ", *width " +
+        //        _pads[0].GetRemap() + "=" +
+        //        _pads[0].GetPulseWidth() + ", *selected 1 *sync 0";
     }
     
     private void WriteToPort(string command, int timeout = 1000, Action callback = null)
@@ -173,7 +180,7 @@ public class TactilityManager : MonoBehaviour
         
         IEnumerator WriteTimeout()
         {
-            // Debug.Log(command);
+            Debug.Log(command);
             _glovePort.Write(command + "\r\n");                                 // Write command to glove box
             yield return new WaitForSeconds(seconds: (float)timeout / 1_000);   // Wait for specified amount of seconds
             _portWriteInProgress = false;                                       // Start listening for new commands again
