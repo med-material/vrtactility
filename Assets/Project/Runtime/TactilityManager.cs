@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO.Ports;
 using System.Linq;
 using UnityEngine;
 
@@ -11,7 +10,7 @@ public class TactilityManager : MonoBehaviour
     private List<PadScript.Pad> _pads;
     
     private UniformGrabbable _ug;
-    private SerialPort _glovePort;
+    private SerialController _glovePort;
     
     private bool _portWriteInProgress;
     private float[] _prevValueBatch;
@@ -23,60 +22,15 @@ public class TactilityManager : MonoBehaviour
         //       It looks like a persistent instance of UiManager must be kept between he scenes, and it might already
         //       Be set to not destroy on load but it seems like a mess
         _pads = calibrationData.values;
-
-        // Use previously initialized glove port if it exists
-        if (ConnectDevice.connectedMessage is "Re:[] new connection" or "Re:[] re-connection")
-        {
-            _glovePort = ConnectDevice.glovePort;
-            return;
-        }
-        _glovePort = new SerialPort();
-            
-        try
-        {
-            // This path is currently non-functional
-            // NOTE: Code is predominantly from ConnectDevice
-            _glovePort.PortName = "COM" + calibrationData.port;
-            print(_glovePort.PortName);
-            _glovePort.BaudRate = 115200;
-            _glovePort.DataBits = 8;
-            _glovePort.Parity = Parity.None;
-            _glovePort.StopBits = StopBits.One;
-            _glovePort.Handshake = Handshake.None;
-            
-            // Open the glove port and do a series of cascading writes to it
-            _glovePort.Open();
-            WriteToPort("iam TACTILITY", 200, () =>
-            {
-                print(_glovePort.ReadLine());
-                WriteToPort("elec 1 *pads_qty 32", 200, () =>
-                {
-                    print(_glovePort.ReadLine());
-                    WriteToPort("battery ?", 200, () =>
-                    {
-                        print(_glovePort.ReadLine());
-                        WriteToPort("freq 50", 200, () =>
-                        {
-                            print(_glovePort.ReadLine());
-                            WriteToPort("stim on", 200);
-                        });
-                    });
-                });
-            });
-        }
-        catch
-        {
-            // If any error happens at any point in the initialization
-            print("Could not connect to device");
-            _glovePort.Close();
-        }
     }
 
     private void Start()
     {
         _ug = FindObjectOfType<UniformGrabbable>();
-        
         _portWriteInProgress = false;
+        
+        var serialControllerGameObject = GameObject.Find("SerialController");
+        _glovePort = serialControllerGameObject.GetComponent<SerialController>();
     }
 
     private void Update()
@@ -164,7 +118,7 @@ public class TactilityManager : MonoBehaviour
         return completeString;
     }
     
-    private void WriteToPort(string command, int timeout = 1000, Action callback = null)
+    private void WriteToPort(string command, int timeout = 20, Action callback = null)
     {
         // NOTE: This is an attempt to port the Thread.Sleep logic from the UiManager into coroutines, since this would
         //       otherwise freeze game execution completely if done in the VR scene (from my understanding)...
@@ -174,19 +128,11 @@ public class TactilityManager : MonoBehaviour
         IEnumerator WriteTimeout()
         {
             // Debug.Log(command);
-            _glovePort.Write(command + "\r\n");                                 // Write command to glove box
+            _glovePort.SendSerialMessage(command + "\r");                       // Write command to glove box
             yield return new WaitForSeconds(seconds: (float)timeout / 1_000);   // Wait for specified amount of seconds
             _portWriteInProgress = false;                                       // Start listening for new commands again
             callback?.Invoke();                                                 // Invoke the provided callback if any
         }
         StartCoroutine(WriteTimeout());
-    }
-
-    private void OnDisable()
-    {
-        // Disable stim and close the glove port after the timeout using the callback function
-        // WriteToPort("stim off", callback:() => _glovePort.Close());
-        _glovePort.Write("stim off\r\n");
-        _glovePort.Close();
     }
 }
