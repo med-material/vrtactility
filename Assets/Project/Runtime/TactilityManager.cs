@@ -17,10 +17,7 @@ public class TactilityManager : MonoBehaviour
 
     private void Awake()
     {
-        // NOTE: Establish connection with the box here.
-        //       This would be done by the other scene, but should be done here for debugging purposes
-        //       It looks like a persistent instance of UiManager must be kept between he scenes, and it might already
-        //       Be set to not destroy on load but it seems like a mess
+        // Retrieve the calibration values
         _pads = calibrationData.values;
     }
 
@@ -63,10 +60,18 @@ public class TactilityManager : MonoBehaviour
             }
         }
 
-        // If the new values are identical to the old ones and their sum is zero then we reject them
-        if (valueBatch.All(value => value == 0) 
-            && _prevValueBatch != null 
-            && _prevValueBatch.All(value => value == 0)) return;
+        // Avoid invoking the stimulator if the there are no pressure values to transmit
+        if (valueBatch.All(value => value == 0))
+        {
+            if (_prevValueBatch != null && _prevValueBatch.Any(value => value != 0))
+            {
+                // Disable the stimulator if the hand has just released the object
+                WriteToPort("velec 11 *selected 0");
+                Array.Clear(_prevValueBatch, 0, _prevValueBatch.Length);
+            }
+            return;
+        }
+        
         _prevValueBatch = valueBatch;
         
         // Generate the command string and send it to the box
@@ -81,9 +86,7 @@ public class TactilityManager : MonoBehaviour
         const string invariablePart1 = "velec 11 *special_anodes 1 *name test *elec 1 *pads ";
         const string invariablePart2 = " *amp ";
         const string invariablePart3 = " *width ";
-        var finalPart = pressureValues.All(value => value == 0)  // If sum is zero then we disable all electrodes
-            ? " *selected 0 *sync 0\r\n" 
-            : " *selected 1 *sync 0\r\n";
+        const string finalPart = " *selected 1 *sync 0\r";
 
         var variablePart1 = "";
         var variablePart2 = "";
@@ -100,10 +103,15 @@ public class TactilityManager : MonoBehaviour
                 < 31 => pressureValues[3],
                 _    => pressureValues[4]  // == 31
             };
-            // if (i < 8) Debug.Log(_pads[i].GetAmplitude() * pressureValue);
+
+            // Ignore pads preassigned as Anodes
+            if (i is 1 or 2 or 9 or 10 or 11 or 12 or 23 or 28) 
+                continue;
+
+            var amplitudeValue = GetConstrainedValue(_pads[i].GetAmplitude() * pressureValue);
 
             variablePart1 += _pads[i].GetRemap() + "=C,";
-            variablePart2 += _pads[i].GetRemap() + "=" + _pads[i].GetAmplitude() * pressureValue + ",";
+            variablePart2 += _pads[i].GetRemap() + "=" + amplitudeValue + ",";
             variablePart3 += _pads[i].GetRemap() + "=" + _pads[i].GetPulseWidth() + ",";
         }
 
@@ -117,21 +125,27 @@ public class TactilityManager : MonoBehaviour
                          + finalPart;
         return completeString;
     }
-    
-    private void WriteToPort(string command, int timeout = 20, Action callback = null)
+
+    private static float GetConstrainedValue(float value)
     {
-        // NOTE: This is an attempt to port the Thread.Sleep logic from the UiManager into coroutines, since this would
-        //       otherwise freeze game execution completely if done in the VR scene (from my understanding)...
-        // if (_portWriteInProgress) return;
+        // Constrain the stimulator input such that overloading is avoided
+        var rounded = Mathf.Round(value * 10) / 10;  // Fix the input value to 1 decimal increments
+        var clamped = Mathf.Clamp(rounded, 0.5f, 9.0f);  // Fix input to compatible range
+        
+        return clamped;
+    }
+    
+    private void WriteToPort(string command, int timeout = 100, Action callback = null)
+    {
         _portWriteInProgress = true;
         
         IEnumerator WriteTimeout()
         {
-            // Debug.Log(command);
-            _glovePort.SendSerialMessage(command + "\r");                       // Write command to glove box
-            yield return new WaitForSeconds(seconds: (float)timeout / 1_000);   // Wait for specified amount of seconds
-            _portWriteInProgress = false;                                       // Start listening for new commands again
-            callback?.Invoke();                                                 // Invoke the provided callback if any
+            Debug.Log(command);
+            _glovePort.SendSerialMessage(command + "\r");                      // Write command to glove box
+            yield return new WaitForSeconds(seconds: (float)timeout / 1_000);  // Wait for specified amount of seconds
+            _portWriteInProgress = false;                                      // Start listening for new commands again
+            callback?.Invoke();                                                // Invoke the provided callback if any
         }
         StartCoroutine(WriteTimeout());
     }
