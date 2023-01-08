@@ -9,7 +9,7 @@ public class UniformGrabbable : MonoBehaviour
 {
     private const float MATCHING_THRESHOLD = 0.001f;
 
-    [Tooltip("The amount of pressure which must be applied for the ball to be grabbed")]
+    [Tooltip("The amount of pressure which must be applied for the ball to be grabbed.")]
     [Range(0.1f, 1.0f)] public float pressureThreshold;
     [SerializeField] private HandInitializer handInitializer;
 
@@ -95,18 +95,25 @@ public class UniformGrabbable : MonoBehaviour
     {
         // Loop through all Rigidbodies on all OVRBoneCapsules and update their state
         foreach (var boneCapsule in _boneCapsules)
-            boneCapsule.CapsuleRigidbody.isKinematic = state;
+            SetIsKinematic(boneCapsule, state);
+    }
+    
+    private static void SetIsKinematic(OVRBoneCapsule boneCapsule, bool state)
+    {
+        boneCapsule.CapsuleRigidbody.isKinematic = state;
     }
 
     private float GetAppliedPressure(OVRBoneCapsule boneCapsule)
     {
+        var r = _sphereCollider.transform.localScale.x;
+        
         // Find corresponding OVRBone (which doesn't collide with the sphere surface) and its position
         var targetBone = _bones[GetBoneIndex(boneCapsule)];
         var bonePosition = targetBone.Transform.position;
 
         // Calculate distance between bone and sphere center and project that into a pressure value between 0 and 1
         var distance = Mathf.Sqrt((bonePosition - transform.position).sqrMagnitude);
-        var pressure = Mathf.Clamp(0.05f - distance, 0, 0.05f) / 0.05f;
+        var pressure = Mathf.Clamp(r - distance, 0, r) / r;
 
         // Return distance as pressure applied
         return pressure;
@@ -158,7 +165,7 @@ public class UniformGrabbable : MonoBehaviour
         foreach (var bone in _boneCapsules)
         {
             var distance = Vector3.Distance(bone.CapsuleCollider.transform.position, collision.transform.position);
-            if (distance > MATCHING_THRESHOLD || distance > smallestDistance) continue;
+            if (distance > MATCHING_THRESHOLD || distance > smallestDistance) continue;  // NOTE: MATCHING_THRESHOLD check may be redundant
         
             closestBone = bone;
             smallestDistance = distance;
@@ -185,8 +192,14 @@ public class UniformGrabbable : MonoBehaviour
         _touchingPointVectors.Remove(boneId);
         _touchingBoneCapsules.Remove(bone);
         
-        // If no bones are touching we make the hands kinematic briefly to reset potential broken bones
-        if (_touchingBoneCapsules.Count != 0) return;
+        if (_touchingBoneCapsules.Count != 0)
+        {
+            // Make the bone kinematic briefly to reset position in relation to the rest of the hand
+            SetIsKinematic(bone, true);
+            SetIsKinematic(bone, false);
+            return;
+        }
+        // If no bones are touching anymore we do the same for all bones in the hand, even those that haven't directly touched the object
         SetIsKinematic(true);
         SetIsKinematic(false);
     }

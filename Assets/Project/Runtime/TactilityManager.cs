@@ -6,6 +6,9 @@ using UnityEngine;
 
 public class TactilityManager : MonoBehaviour
 {
+    [Tooltip("Log outbound command strings to the console before they are transmitted.")] [SerializeField] 
+    public bool logOutboundCommands = false;
+    
     [SerializeField] private CalibrationScriptableObject calibrationData;
     private List<PadScript.Pad> _pads;
     
@@ -23,6 +26,9 @@ public class TactilityManager : MonoBehaviour
 
     private void Start()
     {
+        if (_pads.Count == 0) 
+            Debug.LogWarning("No calibration data found, tactility will be disabled");
+        
         _ug = FindObjectOfType<UniformGrabbable>();
         _portWriteInProgress = false;
         
@@ -32,7 +38,7 @@ public class TactilityManager : MonoBehaviour
 
     private void Update()
     {
-        if (_portWriteInProgress) return;
+        if (_portWriteInProgress || _pads.Count == 0) return;
         
         // Update stimuli for each touching finger bone of interest
         var valueBatch = new float[5];
@@ -60,7 +66,7 @@ public class TactilityManager : MonoBehaviour
             }
         }
 
-        // Avoid invoking the stimulator if the there are no pressure values to transmit
+        // Avoid invoking the stimulator if there are no pressure values to transmit
         if (valueBatch.All(value => value == 0))
         {
             if (_prevValueBatch != null && _prevValueBatch.Any(value => value != 0))
