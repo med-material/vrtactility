@@ -71,7 +71,7 @@ public class ConnectDevice : MonoBehaviour
             gloveSerialController.SendSerialMessage("elec 1 *pads_qty 32\r");
             gloveSerialController.SendSerialMessage("battery ?\r");
             gloveSerialController.SendSerialMessage("freq 50\r");
-
+            
             // === The results are printed in a separate GameObject ===
             
             cd.port = ComPortBox.text;
