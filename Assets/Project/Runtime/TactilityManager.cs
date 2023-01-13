@@ -110,7 +110,7 @@ public class TactilityManager : MonoBehaviour
                 _    => pressureValues[4]  // == 31
             };
 
-            // Ignore pads preassigned as Anodes
+            // Ignore pads to implicitly assign them as Anodes
             if (i is 1 or 2 or 9 or 10 or 11 or 12 or 23 or 28) 
                 continue;
 
@@ -147,7 +147,7 @@ public class TactilityManager : MonoBehaviour
         
         IEnumerator WriteTimeout()
         {
-            Debug.Log(command);
+            Debug.Log("Outbound command: " + command);
             _glovePort.SendSerialMessage(command + "\r");                      // Write command to glove box
             yield return new WaitForSeconds(seconds: (float)timeout / 1_000);  // Wait for specified amount of seconds
             _portWriteInProgress = false;                                      // Start listening for new commands again

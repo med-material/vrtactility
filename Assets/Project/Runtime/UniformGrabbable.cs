@@ -113,7 +113,7 @@ public class UniformGrabbable : MonoBehaviour
 
         // Calculate distance between bone and sphere center and project that into a pressure value between 0 and 1
         var distance = Mathf.Sqrt((bonePosition - transform.position).sqrMagnitude);
-        var pressure = Mathf.Clamp(r - distance, 0, r) / r;
+        var pressure = Mathf.Clamp(r - distance / 2, 0, r) / r;
 
         // Return distance as pressure applied
         return pressure;

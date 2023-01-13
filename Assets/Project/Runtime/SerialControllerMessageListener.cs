@@ -19,7 +19,7 @@ public class SerialControllerMessageListener : MonoBehaviour
             SetConnectionStatus(_receivedValidGreeting);
         }
 
-        Debug.Log("Message arrived: " + msg);
+        Debug.Log("Inbound response: " + msg);
     }
 
     // Invoked when a connect/disconnect event occurs. The parameter 'success'
