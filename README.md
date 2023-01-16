@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/16867891/212345003-abed0468-ee09-47e4-95cb-552cff32a63d.jpg" />
+  <img src="https://user-images.githubusercontent.com/16867891/212775234-5ab67562-ff0b-44b9-9049-0ed9ef6ae61b.png" />
 </p>
 
 # 🤏VRTactility
