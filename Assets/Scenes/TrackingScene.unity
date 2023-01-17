@@ -560,7 +560,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4dbc37663f49d844ea9b3e6050bc09c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveWithPlayerHead: 1
+  moveWithPlayerHead: 0
   _baseForce: 10
   _restriction: 0
 --- !u!114 &1582491695
