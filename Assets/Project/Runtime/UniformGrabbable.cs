@@ -14,6 +14,8 @@ public class UniformGrabbable : MonoBehaviour
     [SerializeField] private HandInitializer handInitializer;
 
     private SphereCollider _sphereCollider;
+    public GameObject _sphere;
+    public OVRHand rightHand;
 
     // Managing touch
     private List<OVRBone> _bones;
@@ -33,7 +35,7 @@ public class UniformGrabbable : MonoBehaviour
         _sphereCollider = GetComponent<SphereCollider>();
 
         if (pressureThreshold > _sphereCollider.radius) pressureThreshold = _sphereCollider.radius;
-        
+
         _touchingBoneCapsules = new List<OVRBoneCapsule>();
         _touchingPointVectors = new Dictionary<OVRSkeleton.BoneId, Vector3>();
     }
@@ -55,12 +57,12 @@ public class UniformGrabbable : MonoBehaviour
                 .Concat(handInitializer.fingerBonesRightH)
                 .ToList();
         }
-        
+
         // Update applied pressure for each touching bone if any
         // TODO: Optimize this to only loop through finger tips
         for (var i = 0; i < _touchingBoneCapsules.Count; i++)
             touchingBonePressures[i] = GetAppliedPressure(_touchingBoneCapsules[i]);
-        
+
         // Calculate union of all collision point vectors to indicate grip distribution
         var gripVector = _touchingPointVectors.Values
             .Select(vector => vector - transform.position)
@@ -78,6 +80,42 @@ public class UniformGrabbable : MonoBehaviour
             isGrabbed = true;
         else if (gripVector.magnitude > 0.014)
             isGrabbed = false;
+
+        // TASK IMPLEMENTATION -M
+
+        for (int i = 0; i < 5; i++)
+        {
+            if (rightHand.GetFingerIsPinching((OVRHand.HandFinger)i))
+            {
+                pressureThreshold += rightHand.GetFingerPinchStrength((OVRHand.HandFinger)i);
+            }
+        }
+
+        pressureThreshold /= 5;
+
+        // Managing what happens with the sphere when reaching certain pressure threshold marks (sleep, grab, disappear). - M
+        if (pressureThreshold <= 0.3f)
+        {
+            // do nothing / sleep 
+            isGrabbed = false;
+            }
+            else if (pressureThreshold > 0.3f && pressureThreshold <= 0.5f) 
+            {
+                // take the sphere 
+                isGrabbed = true;
+                _sphere.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.None;
+            }
+            else if (pressureThreshold > 0.5f)
+            {
+                // sphere breaks / disappears 
+                Debug.Log("Destroyed");
+                Destroy(_sphere);
+            }
+
+        if (isGrabbed)
+        {
+            Debug.Log("pressure applied: " + pressureThreshold);
+        }
     }
 
     private void OnCollisionStay(Collision collision)

@@ -45,7 +45,7 @@ public class HandInitializer : MonoBehaviour
             fingerCapsulesLeftH = new List<OVRBoneCapsule>(leftHandSkeleton.Capsules);
             fingerCapsulesRightH = new List<OVRBoneCapsule>(rightHandSkeleton.Capsules);
 
-            Debug.Log("Left and right hands are be initialized");
+            Debug.Log("Both hands are initialized");
             isInitialized = true;
         }
         else
