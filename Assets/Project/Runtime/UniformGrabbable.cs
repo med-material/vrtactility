@@ -16,6 +16,9 @@ public class UniformGrabbable : MonoBehaviour
     private SphereCollider _sphereCollider;
     public GameObject _sphere;
     public OVRHand rightHand;
+    public Vector3 respawnPos;
+    public float respawnTime = 5f;
+    private int acceptedCount;
 
     // Managing touch
     private List<OVRBone> _bones;
@@ -33,6 +36,7 @@ public class UniformGrabbable : MonoBehaviour
     private void Start()
     {
         _sphereCollider = GetComponent<SphereCollider>();
+        _sphere.SetActive(true);
 
         if (pressureThreshold > _sphereCollider.radius) pressureThreshold = _sphereCollider.radius;
 
@@ -81,8 +85,10 @@ public class UniformGrabbable : MonoBehaviour
         else if (gripVector.magnitude > 0.014)
             isGrabbed = false;
 
-        // TASK IMPLEMENTATION -M
-
+        // Task implementation -M
+        
+        // calculate the pinch strength for each finger on the right hand.
+        // I'm not sure if we have this anywhere else, so I made this thing using pressureThreshold: 
         for (int i = 0; i < 5; i++)
         {
             if (rightHand.GetFingerIsPinching((OVRHand.HandFinger)i))
@@ -91,31 +97,55 @@ public class UniformGrabbable : MonoBehaviour
             }
         }
 
+        // calculating average pressure, divided by how many fingers we have 
         pressureThreshold /= 5;
 
-        // Managing what happens with the sphere when reaching certain pressure threshold marks (sleep, grab, disappear). - M
-        if (pressureThreshold <= 0.3f)
+        // Managing what happens with the sphere when reaching certain pressure threshold marks (sleep, grab, disappear). 
+        if (pressureThreshold <= 0.2f)
         {
             // do nothing / sleep 
             isGrabbed = false;
             }
-            else if (pressureThreshold > 0.3f && pressureThreshold <= 0.5f) 
+            else if (pressureThreshold > 0.2f && pressureThreshold <= 0.5f) 
             {
                 // take the sphere 
                 isGrabbed = true;
                 _sphere.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.None;
             }
-            else if (pressureThreshold > 0.5f)
+            else if (pressureThreshold > 0.55f)
             {
                 // sphere breaks / disappears 
-                Debug.Log("Destroyed");
-                Destroy(_sphere);
-            }
+                //Debug.Log("Destroyed");
+                Destroyed();
 
-        if (isGrabbed)
-        {
-            Debug.Log("pressure applied: " + pressureThreshold);
+                // enable this to make the ball respawn to original position 
+                //Respawn();
         }
+
+        if(_sphere.transform.position.y > 3.0f)
+        {
+            Respawn();
+        }
+
+        if (acceptedCount == 20)
+        {
+            // condition for ending the game -M
+        }
+    }
+
+    public void Destroyed()
+    {
+        // "destroy" the object -M
+        _sphere.SetActive(false);
+    }
+
+    void Respawn()
+    {
+        // reset the object to original position (edit in inspector) -M
+        Invoke("Sphere respawned", respawnTime);
+        _sphere.transform.position = respawnPos;
+        _sphere.SetActive(true);
+        acceptedCount++;
     }
 
     private void OnCollisionStay(Collision collision)
