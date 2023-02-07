@@ -32,7 +32,7 @@ public class UniformGrabbable : MonoBehaviour
     {
         _sphereCollider = GetComponent<SphereCollider>();
 
-        if (pressureThreshold > _sphereCollider.radius) pressureThreshold = _sphereCollider.radius;
+        // if (pressureThreshold > _sphereCollider.radius) pressureThreshold = _sphereCollider.radius;
         
         _touchingBoneCapsules = new List<OVRBoneCapsule>();
         _touchingPointVectors = new Dictionary<OVRSkeleton.BoneId, Vector3>();
@@ -59,7 +59,15 @@ public class UniformGrabbable : MonoBehaviour
         // TODO: Optimize this to only loop through finger tips
         for (var i = 0; i < _touchingBoneCapsules.Count; i++)
             touchingBonePressures[i] = GetAppliedPressure(_touchingBoneCapsules[i]);
-        
+
+        // Stop updating if the applied pressure is less than would be required to grib the object
+        // TODO: New pressure calculations must be reflected here...
+        if (touchingBonePressures.Count > 0 && touchingBonePressures.Max() < pressureThreshold)
+        {
+            isGrabbed = false;
+            return;
+        }
+
         // Calculate union of all collision point vectors to indicate grip distribution
         var gripVector = _touchingPointVectors.Values
             .Select(vector => vector - transform.position)
@@ -114,7 +122,7 @@ public class UniformGrabbable : MonoBehaviour
 
         // Calculate distance between bone and sphere center and project that into a pressure value between 0 and 1
         var distance = Mathf.Sqrt((bonePosition - transform.position).sqrMagnitude);
-        var pressure = Mathf.Clamp(r - distance / 2, 0, r) / r;
+        var pressure = Mathf.Clamp(r - distance, 0, r) / r;
 
         // Return distance as pressure applied
         return pressure;
