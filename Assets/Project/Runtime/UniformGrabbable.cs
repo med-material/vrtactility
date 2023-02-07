@@ -43,6 +43,7 @@ public class UniformGrabbable : MonoBehaviour
         // Wait for OVR to initialize bones
         if (_boneCapsules is null && handInitializer.isInitialized)
         {
+            // ...Save bone capsules
             _boneCapsules = handInitializer.fingerCapsulesLeftH
                 .Concat(handInitializer.fingerCapsulesRightH)
                 .ToList();
@@ -50,9 +51,14 @@ public class UniformGrabbable : MonoBehaviour
         }
         if (_bones is null && handInitializer.isInitialized)
         {
+            // ...Save bones
             _bones = handInitializer.fingerBonesLeftH
                 .Concat(handInitializer.fingerBonesRightH)
                 .ToList();
+
+            // var lineRenderers = FindObjectsOfType<LineRenderer>();
+            // foreach (var line in lineRenderers)
+            //     line.enabled = false;
         }
         
         // Update applied pressure for each touching bone if any
