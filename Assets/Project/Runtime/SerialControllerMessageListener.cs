@@ -18,7 +18,7 @@ public class SerialControllerMessageListener : MonoBehaviour
         
         if (!_receivedValidGreeting && _isSuccessfullyConnected)
         {
-            _receivedValidGreeting = msg is "Re:[] new connection" or "Re:[] re-connection";
+            _receivedValidGreeting = msg is "Re:[] new connection" or "Re:[] re-connection" or "Re:[] ok";
             SetConnectionStatus(_receivedValidGreeting);
         }
 
