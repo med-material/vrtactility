@@ -30,6 +30,7 @@ public class UiManager : MonoBehaviour
     private string stringStart = "Re:[] battery *capacity=";
     private string SaveDocumentPath = Application.streamingAssetsPath + "/Calibration_Saved_Data/" + "CalibrationSave" + ".txt";
     private string separation = "/";
+    [SerializeField] private CalibrationScriptableObject cd;
 
     private void Awake()
     {
@@ -79,11 +80,11 @@ public class UiManager : MonoBehaviour
         RestoreCalibationButton.interactable = true;
         StimulationToggle.interactable = true;
         textTitle.text = "Pad " + buttonTag + " Selected";
-        AmplitudeBox.text = Convert.ToString(StimManager.GetPadsInfo(currentPad).GetAmplitude());
-        PulseWidthBox.text = Convert.ToString(StimManager.GetPadsInfo(currentPad).GetPulseWidth());
-        FrequencyBox.text = Convert.ToString(StimManager.GetPadsInfo(currentPad).GetFrequency());
+        AmplitudeBox.text = Convert.ToString(ConnectDevice.GetPadsInfo(currentPad).GetAmplitude());
+        PulseWidthBox.text = Convert.ToString(ConnectDevice.GetPadsInfo(currentPad).GetPulseWidth());
+        FrequencyBox.text = Convert.ToString(ConnectDevice.GetPadsInfo(currentPad).GetFrequency());
         //StimManager.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
-        ConnectDevice.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
+        ConnectDevice.gloveSerialController.SendSerialMessage("velec 11 *special_anodes 1 *name test *elec 1 *pads " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r");
         Thread.Sleep(100);
     }
 
@@ -92,9 +93,9 @@ public class UiManager : MonoBehaviour
         float amplitude = (float) Decimal.Round(Convert.ToDecimal(AmplitudeBox.text), 1);
         amplitude =  Mathf.Clamp(amplitude, 0.5f, 7.5f);
         AmplitudeBox.text = Convert.ToString(amplitude);
-        StimManager.GetPadsInfo(currentPad).SetAmplitude(amplitude);
+        ConnectDevice.GetPadsInfo(currentPad).SetAmplitude(amplitude);
         //StimManager.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
-        ConnectDevice.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
+        ConnectDevice.gloveSerialController.SendSerialMessage("velec 11 *special_anodes 1 *name test *elec 1 *pads " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r");
         Thread.Sleep(100);
     }
 
@@ -103,9 +104,9 @@ public class UiManager : MonoBehaviour
         float amplitude = (float)Decimal.Round(Convert.ToDecimal(AmplitudeBox.text), 1);
         amplitude = Mathf.Clamp(amplitude + 0.1f, 0.5f, 7.5f);
         AmplitudeBox.text = Convert.ToString(amplitude);
-        StimManager.GetPadsInfo(currentPad).SetAmplitude(amplitude);
+        ConnectDevice.GetPadsInfo(currentPad).SetAmplitude(amplitude);
         //StimManager.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
-        ConnectDevice.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
+        ConnectDevice.gloveSerialController.SendSerialMessage("velec 11 *special_anodes 1 *name test *elec 1 *pads " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r");
         //print("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
         EventSystem.current.currentSelectedGameObject.SetActive(false);
         Thread.Sleep(150);
@@ -117,9 +118,9 @@ public class UiManager : MonoBehaviour
         float amplitude = (float)Decimal.Round(Convert.ToDecimal(AmplitudeBox.text), 1);
         amplitude = Mathf.Clamp(amplitude - 0.1f, 0.5f, 7.5f);
         AmplitudeBox.text = Convert.ToString(amplitude);
-        StimManager.GetPadsInfo(currentPad).SetAmplitude(amplitude);
+        ConnectDevice.GetPadsInfo(currentPad).SetAmplitude(amplitude);
         //StimManager.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
-        ConnectDevice.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
+        ConnectDevice.gloveSerialController.SendSerialMessage("velec 11 *special_anodes 1 *name test *elec 1 *pads " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r");
         //print("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
         EventSystem.current.currentSelectedGameObject.SetActive(false);
         Thread.Sleep(150);
@@ -131,9 +132,9 @@ public class UiManager : MonoBehaviour
         int pulseWidth = (int)Mathf.Round((float)(Convert.ToDouble(PulseWidthBox.text) / 10.0)) * 10;
         pulseWidth = Mathf.Clamp(pulseWidth, 30, 500);
         PulseWidthBox.text = Convert.ToString(pulseWidth);
-        StimManager.GetPadsInfo(currentPad).SetPulseWidth(pulseWidth);
+        ConnectDevice.GetPadsInfo(currentPad).SetPulseWidth(pulseWidth);
         //StimManager.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
-        ConnectDevice.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
+        ConnectDevice.gloveSerialController.SendSerialMessage("velec 11 *special_anodes 1 *name test *elec 1 *pads " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r");
         Thread.Sleep(150);
     }
 
@@ -142,53 +143,53 @@ public class UiManager : MonoBehaviour
         int frequency = Convert.ToInt32(FrequencyBox.text);
         frequency = Mathf.Clamp(frequency, 1, 200);
         FrequencyBox.text = Convert.ToString(frequency);
-        StimManager.GetPadsInfo(currentPad).SetFrequency(frequency);
+        ConnectDevice.GetPadsInfo(currentPad).SetFrequency(frequency);
         //StimManager.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
-        ConnectDevice.glovePort.Write("velec 11 *special_anodes 1 *name test *elec 1 *pads " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + StimManager.GetPadsInfo(currentPad).GetRemap() + "=" + StimManager.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r\n");
+        ConnectDevice.gloveSerialController.SendSerialMessage("velec 11 *special_anodes 1 *name test *elec 1 *pads " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=C, *amp " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetAmplitude() + ", *width " + ConnectDevice.GetPadsInfo(currentPad).GetRemap() + "=" + ConnectDevice.GetPadsInfo(currentPad).GetPulseWidth() + ", *selected 1 *sync 0\r");
         Thread.Sleep(150);
         //StimManager.glovePort.Write("freq " + StimManager.GetPadsInfo(currentPad).GetFrequency() + "\r\n");
-        ConnectDevice.glovePort.Write("freq " + StimManager.GetPadsInfo(currentPad).GetFrequency() + "\r\n");
+        ConnectDevice.gloveSerialController.SendSerialMessage("freq " + ConnectDevice.GetPadsInfo(currentPad).GetFrequency() + "\r");
         Thread.Sleep(150);
     }
 
     public void InitialCalibration()
     {
-        float amplitude = StimManager.GetPadsInfo(3).GetAmplitude();
+        float amplitude = ConnectDevice.GetPadsInfo(3).GetAmplitude();
         for (int i = 0; i < 8; i++)
         {
-            StimManager.GetPadsInfo(i).SetAmplitude(amplitude);
+            ConnectDevice.GetPadsInfo(i).SetAmplitude(amplitude);
         }
-        amplitude = StimManager.GetPadsInfo(11).GetAmplitude();
+        amplitude = ConnectDevice.GetPadsInfo(11).GetAmplitude();
         for (int i = 8; i < 21; i++)
         {
-            StimManager.GetPadsInfo(i).SetAmplitude(amplitude);
+            ConnectDevice.GetPadsInfo(i).SetAmplitude(amplitude);
         }
-        amplitude = StimManager.GetPadsInfo(22).GetAmplitude();
+        amplitude = ConnectDevice.GetPadsInfo(22).GetAmplitude();
         for (int i = 21; i < 26; i++)
         {
-            StimManager.GetPadsInfo(i).SetAmplitude(amplitude);
+            ConnectDevice.GetPadsInfo(i).SetAmplitude(amplitude);
         }
-        amplitude = StimManager.GetPadsInfo(27).GetAmplitude();
+        amplitude = ConnectDevice.GetPadsInfo(27).GetAmplitude();
         for (int i = 26; i < 31; i++)
         {
-            StimManager.GetPadsInfo(i).SetAmplitude(amplitude);
+            ConnectDevice.GetPadsInfo(i).SetAmplitude(amplitude);
         }
     }
 
     public void EnableStimulation() {
         if (EventSystem.current.currentSelectedGameObject.GetComponent<Toggle>().isOn)
             //StimManager.glovePort.Write("stim on\r\n");
-            ConnectDevice.glovePort.Write("stim on\r\n");
+            ConnectDevice.gloveSerialController.SendSerialMessage("stim on\r");
         else
             //StimManager.glovePort.Write("stim off\r\n");
-            ConnectDevice.glovePort.Write("stim off\r\n");
+            ConnectDevice.gloveSerialController.SendSerialMessage("stim off\r");
     }
 
     public void ChangeScene()
     {
-        ConnectDevice.glovePort.Write("stim on\r\n");
+        ConnectDevice.gloveSerialController.SendSerialMessage("stim on\r");
         Thread.Sleep(150);
-        ConnectDevice.glovePort.Write("velec 11 *selected 0\r\n");
+        ConnectDevice.gloveSerialController.SendSerialMessage("velec 11 *selected 0\r");
         SceneManager.LoadScene(1);
         DontDestroyOnLoad(StimManager.gameObject);
     }
@@ -205,6 +206,8 @@ public class UiManager : MonoBehaviour
             File.AppendAllText(SaveDocumentPath, text + "\n");
         }
 
+        // Save data to CalibrationScriptableObject instance
+        cd.values = ConnectDevice.Remap2.ToList();
     }
 
     public void ReadSaveFile()
@@ -251,9 +254,9 @@ public class UiManager : MonoBehaviour
 
             }
 
-            AmplitudeBox.text = Convert.ToString(StimManager.GetPadsInfo(currentPad).GetAmplitude());
-            PulseWidthBox.text = Convert.ToString(StimManager.GetPadsInfo(currentPad).GetPulseWidth());
-            FrequencyBox.text = Convert.ToString(StimManager.GetPadsInfo(currentPad).GetFrequency());
+            AmplitudeBox.text = Convert.ToString(ConnectDevice.GetPadsInfo(currentPad).GetAmplitude());
+            PulseWidthBox.text = Convert.ToString(ConnectDevice.GetPadsInfo(currentPad).GetPulseWidth());
+            FrequencyBox.text = Convert.ToString(ConnectDevice.GetPadsInfo(currentPad).GetFrequency());
         }
 
     }
@@ -273,6 +276,7 @@ public class UiManager : MonoBehaviour
 
     public void Close()
     {
+        // NOTE this code is not refactored and will result in errors if executed
         if (ConnectDevice.connectedMessage == "Re:[] new connection" || ConnectDevice.connectedMessage == "Re:[] re-connection")
         {
             ConnectDevice.glovePort.Write("stim off\r\n");

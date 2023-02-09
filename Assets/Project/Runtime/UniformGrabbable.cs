@@ -9,7 +9,7 @@ public class UniformGrabbable : MonoBehaviour
 {
     private const float MATCHING_THRESHOLD = 0.001f;
 
-    [Tooltip("The amount of pressure which must be applied for the ball to be grabbed")]
+    [Tooltip("The amount of pressure which must be applied for the ball to be grabbed.")]
     [Range(0.1f, 1.0f)] public float pressureThreshold;
     [SerializeField] private HandInitializer handInitializer;
 
@@ -32,7 +32,7 @@ public class UniformGrabbable : MonoBehaviour
     {
         _sphereCollider = GetComponent<SphereCollider>();
 
-        if (pressureThreshold > _sphereCollider.radius) pressureThreshold = _sphereCollider.radius;
+        // if (pressureThreshold > _sphereCollider.radius) pressureThreshold = _sphereCollider.radius;
         
         _touchingBoneCapsules = new List<OVRBoneCapsule>();
         _touchingPointVectors = new Dictionary<OVRSkeleton.BoneId, Vector3>();
@@ -40,10 +40,10 @@ public class UniformGrabbable : MonoBehaviour
 
     private void Update()
     {
-        // Debug.Log(isGrabbed);
         // Wait for OVR to initialize bones
         if (_boneCapsules is null && handInitializer.isInitialized)
         {
+            // ...Save bone capsules
             _boneCapsules = handInitializer.fingerCapsulesLeftH
                 .Concat(handInitializer.fingerCapsulesRightH)
                 .ToList();
@@ -51,16 +51,29 @@ public class UniformGrabbable : MonoBehaviour
         }
         if (_bones is null && handInitializer.isInitialized)
         {
+            // ...Save bones
             _bones = handInitializer.fingerBonesLeftH
                 .Concat(handInitializer.fingerBonesRightH)
                 .ToList();
+
+            // var lineRenderers = FindObjectsOfType<LineRenderer>();
+            // foreach (var line in lineRenderers)
+            //     line.enabled = false;
         }
         
         // Update applied pressure for each touching bone if any
         // TODO: Optimize this to only loop through finger tips
         for (var i = 0; i < _touchingBoneCapsules.Count; i++)
             touchingBonePressures[i] = GetAppliedPressure(_touchingBoneCapsules[i]);
-        
+
+        // Stop updating if the applied pressure is less than would be required to grib the object
+        // TODO: New pressure calculations must be reflected here...
+        if (touchingBonePressures.Count > 0 && touchingBonePressures.Max() < pressureThreshold)
+        {
+            isGrabbed = false;
+            return;
+        }
+
         // Calculate union of all collision point vectors to indicate grip distribution
         var gripVector = _touchingPointVectors.Values
             .Select(vector => vector - transform.position)
@@ -73,7 +86,6 @@ public class UniformGrabbable : MonoBehaviour
         gripVector /= _touchingPointVectors.Count;
 
         // Manage FreeFloatable in accordance with grip
-        //Debug.Log(gripVector.magnitude);
         if (gripVector.magnitude < 0.014)
             isGrabbed = true;
         else if (gripVector.magnitude > 0.014)
@@ -83,11 +95,14 @@ public class UniformGrabbable : MonoBehaviour
     private void OnCollisionStay(Collision collision)
     {
         // Find matching bone
-        var boneCapsule = FindMatchingBone(collision);
-        if (boneCapsule is null) return;  // If the colliding object is not a bone
+        var closestBoneCapsule = FindMatchingBone(collision);
+        if (closestBoneCapsule is null) return;  // If the colliding object is not a bone
+        
+        if (!IsBoneOnValidHand(closestBoneCapsule) || _touchingBoneCapsules.Count == 0) 
+            return;  // Ignore collision if the colliding bone is from the wrong hand or state has been reset
         
         // Update the contact points of each touching OVRBoneCapsule
-        var boneId = GetBoneId(boneCapsule);
+        var boneId = GetBoneId(closestBoneCapsule);
         _touchingPointVectors[boneId] = collision.contacts[0].point;
     }
 
@@ -95,18 +110,25 @@ public class UniformGrabbable : MonoBehaviour
     {
         // Loop through all Rigidbodies on all OVRBoneCapsules and update their state
         foreach (var boneCapsule in _boneCapsules)
-            boneCapsule.CapsuleRigidbody.isKinematic = state;
+            SetIsKinematic(boneCapsule, state);
+    }
+    
+    private static void SetIsKinematic(OVRBoneCapsule boneCapsule, bool state)
+    {
+        boneCapsule.CapsuleRigidbody.isKinematic = state;
     }
 
     private float GetAppliedPressure(OVRBoneCapsule boneCapsule)
     {
+        var r = _sphereCollider.transform.localScale.x;
+        
         // Find corresponding OVRBone (which doesn't collide with the sphere surface) and its position
         var targetBone = _bones[GetBoneIndex(boneCapsule)];
         var bonePosition = targetBone.Transform.position;
 
         // Calculate distance between bone and sphere center and project that into a pressure value between 0 and 1
         var distance = Mathf.Sqrt((bonePosition - transform.position).sqrMagnitude);
-        var pressure = Mathf.Clamp(0.05f - distance, 0, 0.05f) / 0.05f;
+        var pressure = Mathf.Clamp(r - distance, 0, r) / r;
 
         // Return distance as pressure applied
         return pressure;
@@ -115,17 +137,18 @@ public class UniformGrabbable : MonoBehaviour
     private int GetBoneIndex(OVRBoneCapsule boneCapsule)
     {
         // Find out what hand boneCapsule belongs to in order to index properly
-        var isLeftHand = IsLeftHand(_boneCapsules.IndexOf(boneCapsule));
+        var isLeftHand = _boneCapsules.IndexOf(boneCapsule) < _boneCapsules.Count / 2;
         var indexOffset = isLeftHand ? 0 : _bones.Count / 2;
+
         return indexOffset + boneCapsule.BoneIndex;
     }
     
-    private bool IsLeftHand(int index)
+    private bool IsIndexOnLeftHand(int index)
     {
-        if (index < 0 || index >= _boneCapsules.Count)
+        if (index < 0 || index >= _bones.Count)
             throw new IndexOutOfRangeException(
                 "Parameter cannot be greater than the number of bone capsules or less than zero");
-        return index < _boneCapsules.Count / 2;
+        return index < _bones.Count / 2;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -135,18 +158,55 @@ public class UniformGrabbable : MonoBehaviour
         if (closestBoneCapsule is null || IsTouching(closestBoneCapsule)) 
             return;  // Don't add a bone that doesn't exist or is already touching
         
+        if (!IsBoneOnValidHand(closestBoneCapsule))
+        {
+            // Clear state and return if the colliding hand is not the hand currently touching
+            _touchingPointVectors.Clear();
+            _touchingBoneCapsules.Clear();
+            
+            touchingBoneIds.Clear();
+            touchingBonePressures.Clear();
+            isGrabbed = false;
+            
+            SetIsKinematic(closestBoneCapsule, true);
+            SetIsKinematic(closestBoneCapsule, false);
+            
+            return;
+        }
+
         // Add bone and calculate applied pressure
         var boneId = GetBoneId(closestBoneCapsule);
+        try
+        {
+            _touchingPointVectors.Add(boneId, collision.contacts[0].point);
+        }
+        catch (ArgumentException e)
+        {
+            return;
+        }
         _touchingBoneCapsules.Add(closestBoneCapsule);
-        _touchingPointVectors.Add(boneId, collision.contacts[0].point);
         touchingBoneIds.Add(boneId);
         touchingBonePressures.Add(GetAppliedPressure(closestBoneCapsule));
     }
 
+    private bool IsBoneOnValidHand(OVRBoneCapsule boneCapsule)
+    {
+        if (_touchingBoneCapsules.Count == 0) return true;
+        
+        var collidingBoneIndex = GetBoneIndex(boneCapsule);
+        var firstTouchingBoneIndex = GetBoneIndex(_touchingBoneCapsules[0]);
+        
+        return IsIndexOnLeftHand(collidingBoneIndex) == IsIndexOnLeftHand(firstTouchingBoneIndex);
+    }
+
     private OVRSkeleton.BoneId GetBoneId(OVRBoneCapsule boneCapsule)
     {
-        var index = GetBoneIndex(boneCapsule);
-        return _bones[index].Id;
+        // Raise an error if the provided BoneIndex is for a body part and not just the hands
+        if (boneCapsule.BoneIndex > 18)
+            throw new IndexOutOfRangeException(
+                "Error trying to process collision with unsupported OVR body part");
+        
+        return _bones[boneCapsule.BoneIndex].Id;
     }
 
     [CanBeNull]
@@ -158,7 +218,7 @@ public class UniformGrabbable : MonoBehaviour
         foreach (var bone in _boneCapsules)
         {
             var distance = Vector3.Distance(bone.CapsuleCollider.transform.position, collision.transform.position);
-            if (distance > MATCHING_THRESHOLD || distance > smallestDistance) continue;
+            if (distance > MATCHING_THRESHOLD || distance > smallestDistance) continue;  // NOTE: MATCHING_THRESHOLD check may be redundant
         
             closestBone = bone;
             smallestDistance = distance;
@@ -175,18 +235,34 @@ public class UniformGrabbable : MonoBehaviour
     private void OnCollisionExit(Collision collision)
     {
         // Find the OVRBone that best matches the colliding object
-        var bone = FindMatchingBone(collision);
-        if (bone is null) return;  // if the colliding object is not an OVRBone
-    
+        var closestBoneCapsule = FindMatchingBone(collision);
+        if (closestBoneCapsule is null) 
+            return;  // If the colliding object is not an OVRBone
+
+        var boneWasTouching = _touchingBoneCapsules.Contains(closestBoneCapsule);
+        if (!boneWasTouching)
+            return;  // If the colliding bone was not previously touching
+        
+        if (!IsBoneOnValidHand(closestBoneCapsule)) 
+            return;  // Ignore collision if the colliding bone is from the wrong hand
+
         // Remove the colliding OVRBone from list of touching bones and applied pressures
-        var boneId = GetBoneId(bone);
-        touchingBonePressures.RemoveAt(_touchingBoneCapsules.IndexOf(bone));
+        var boneId = GetBoneId(closestBoneCapsule);
+        touchingBonePressures.RemoveAt(_touchingBoneCapsules.IndexOf(closestBoneCapsule));
         touchingBoneIds.Remove(boneId);
         _touchingPointVectors.Remove(boneId);
-        _touchingBoneCapsules.Remove(bone);
+        _touchingBoneCapsules.Remove(closestBoneCapsule);
         
-        // If no bones are touching we make the hands kinematic briefly to reset potential broken bones
-        if (_touchingBoneCapsules.Count != 0) return;
+        if (_touchingBoneCapsules.Count != 0)
+        {
+            // Make the bone kinematic briefly to reset position in relation to the rest of the hand
+            SetIsKinematic(closestBoneCapsule, true);
+            SetIsKinematic(closestBoneCapsule, false);
+            return;
+        }
+        isGrabbed = false;
+        
+        // If no bones are touching anymore we do the same for all bones in the hand, even those that haven't directly touched the object
         SetIsKinematic(true);
         SetIsKinematic(false);
     }
@@ -196,7 +272,8 @@ public class UniformGrabbable : MonoBehaviour
     {
         if (_touchingBoneCapsules.Count == 0) return null;
         
-        return IsLeftHand(_boneCapsules.IndexOf(_touchingBoneCapsules[0]))
+        // Although GetBoneIndex returns _bones index and not _boneCapsules, we're still free to pipe it in to the left hand check
+        return IsIndexOnLeftHand(GetBoneIndex(_touchingBoneCapsules[0]))
             ? _boneCapsules[0].CapsuleRigidbody
             : _boneCapsules[19].CapsuleRigidbody;
     }
