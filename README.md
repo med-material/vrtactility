@@ -1,5 +1,9 @@
-# htlab
-This project is inteded as a template for working with OVR hand tracking in Unity. The `TrackingScene` contains a minimal scene with everything needed to get started. In addition, the project comes with:
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/16867891/212775234-5ab67562-ff0b-44b9-9049-0ed9ef6ae61b.png" />
+</p>
+
+# 🤏VRTactility
+This project is based on a [template](https://github.com/kuff/htlab) for working with OVR hand tracking in Unity. The `TrackingScene` contains a minimal scene with everything needed to get started. In addition, the project comes with:
 * The [Oculus Integration SDK](https://developer.oculus.com/downloads/package/unity-integration/) pre-installed and configured, along with XR Plugin Management.
 * The [recommended projects settings](https://developer.oculus.com/documentation/unity/unity-conf-settings/) by Oculus already configured.
 * A minimal [Assembly Definition](https://docs.unity3d.com/Manual/ScriptCompilationAssemblyDefinitionFiles.html) structure to speed up compile times.
