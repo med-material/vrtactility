@@ -118,7 +118,7 @@ public class UniformGrabbable : MonoBehaviour
         boneCapsule.CapsuleRigidbody.isKinematic = state;
     }
 
-    private float GetAppliedPressure(OVRBoneCapsule boneCapsule)
+    private float GetAppliedPressure(in OVRBoneCapsule boneCapsule)
     {
         var r = _sphereCollider.transform.localScale.x;
         
@@ -134,7 +134,7 @@ public class UniformGrabbable : MonoBehaviour
         return pressure;
     }
 
-    private int GetBoneIndex(OVRBoneCapsule boneCapsule)
+    private int GetBoneIndex(in OVRBoneCapsule boneCapsule)
     {
         // Find out what hand boneCapsule belongs to in order to index properly
         var isLeftHand = _boneCapsules.IndexOf(boneCapsule) < _boneCapsules.Count / 2;
@@ -143,7 +143,7 @@ public class UniformGrabbable : MonoBehaviour
         return indexOffset + boneCapsule.BoneIndex;
     }
     
-    private bool IsIndexOnLeftHand(int index)
+    private bool IsIndexOnLeftHand(in int index)
     {
         if (index < 0 || index >= _bones.Count)
             throw new IndexOutOfRangeException(
@@ -189,7 +189,7 @@ public class UniformGrabbable : MonoBehaviour
         touchingBonePressures.Add(GetAppliedPressure(closestBoneCapsule));
     }
 
-    private bool IsBoneOnValidHand(OVRBoneCapsule boneCapsule)
+    private bool IsBoneOnValidHand(in OVRBoneCapsule boneCapsule)
     {
         if (_touchingBoneCapsules.Count == 0) return true;
         
@@ -199,7 +199,7 @@ public class UniformGrabbable : MonoBehaviour
         return IsIndexOnLeftHand(collidingBoneIndex) == IsIndexOnLeftHand(firstTouchingBoneIndex);
     }
 
-    private OVRSkeleton.BoneId GetBoneId(OVRBoneCapsule boneCapsule)
+    private OVRSkeleton.BoneId GetBoneId(in OVRBoneCapsule boneCapsule)
     {
         // Raise an error if the provided BoneIndex is for a body part and not just the hands
         if (boneCapsule.BoneIndex > 18)
@@ -210,7 +210,7 @@ public class UniformGrabbable : MonoBehaviour
     }
 
     [CanBeNull]
-    private OVRBoneCapsule FindMatchingBone(Collision collision)
+    private OVRBoneCapsule FindMatchingBone(in Collision collision)
     {
         // Find the OVRBone that best matches the colliding object
         OVRBoneCapsule closestBone = null;
