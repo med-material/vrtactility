@@ -1,7 +1,6 @@
 using UnityEngine;
 
-// [RequireComponent(typeof(SphereCollider))]
-public class TEMPUniformGrabbable : MonoBehaviour, IGrabbable
+public class UniformGrabbableBehaviour : MonoBehaviour, IGrabbable
 {
     [Tooltip("The amount of pressure required for grabbing.")]
     [Range(0.1f, 1.0f)] public float pressureThreshold;
@@ -14,7 +13,6 @@ public class TEMPUniformGrabbable : MonoBehaviour, IGrabbable
     private void Start()
     {
         _touchable = GetComponent<ITouchable>();
-        // _sphereCollider = GetComponent<SphereCollider>();
 
         _isGrabbed = false;
     }
@@ -50,7 +48,7 @@ public class TEMPUniformGrabbable : MonoBehaviour, IGrabbable
         _isGrabbed = cumulativeGripVector.magnitude < 0.014;
     }
 
-    public virtual bool IsGrabbed()
+    public bool IsGrabbed()
     {
         return _isGrabbed;
     }

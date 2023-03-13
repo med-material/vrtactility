@@ -4,9 +4,9 @@ using UnityEngine;
 [RequireComponent(typeof(IHandParser))]
 [RequireComponent(typeof(Collider))]
 [RequireComponent(typeof(Rigidbody))]
-public class PhysicalizedTouchable : MonoBehaviour, ITouchable
+public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
 {
-    private PhysicalizedHandParser _handParser;
+    private PhysicalizedHandParserBehaviour _handParser;
     private PressurePoint?[] _pressurePoints;
 
     private OVRPlugin.Hand _activeHand;
@@ -14,7 +14,7 @@ public class PhysicalizedTouchable : MonoBehaviour, ITouchable
 
     private void Start()
     {
-        _handParser = GetComponent<PhysicalizedHandParser>();
+        _handParser = GetComponent<PhysicalizedHandParserBehaviour>();  // Tight coupling is required in this case
         
         ResetPressurePoints();
         
@@ -44,22 +44,22 @@ public class PhysicalizedTouchable : MonoBehaviour, ITouchable
     private void OnCollisionEnter(Collision collision)
     {
         // Add the closest matching OVRBone to list of touching bones
-        var closestCapsule = _handParser.GetBoneFromCollision(in collision);
-        if (closestCapsule is null || _pressurePoints[closestCapsule.BoneIndex] != null) 
+        var capsule = _handParser.GetBoneFromCollision(in collision);
+        if (capsule is null || _pressurePoints[capsule.BoneIndex] != null) 
             return;  // Don't add a bone that doesn't exist or is already touching
         
-        if (!IsBoneOnValidHand(in closestCapsule))
+        if (!IsBoneOnValidHand(in capsule))
         {
             // Clear state and return if the colliding hand is not the hand currently touching
             ResetPressurePoints();
             
-            SetIsKinematic(in closestCapsule, true);
-            SetIsKinematic(in closestCapsule, false);
+            SetIsKinematic(in capsule, true);
+            SetIsKinematic(in capsule, false);
             
             return;
         }
 
-        AddPressurePoint(in collision, in closestCapsule);
+        AddPressurePoint(in collision, in capsule);
     }
 
     private bool IsBoneOnValidHand(in OVRBoneCapsule capsule)
@@ -106,38 +106,38 @@ public class PhysicalizedTouchable : MonoBehaviour, ITouchable
     private void OnCollisionStay(Collision collision)
     {
         // Find matching bone
-        var closestCapsule = _handParser.GetBoneFromCollision(in collision);
-        if (closestCapsule is null) return;  // If the colliding object is not a bone
+        var capsule = _handParser.GetBoneFromCollision(in collision);
+        if (capsule is null) return;  // If the colliding object is not a bone
         
-        if (!IsBoneOnValidHand(in closestCapsule) || _pressurePointCount == 0) 
+        if (!IsBoneOnValidHand(in capsule) || _pressurePointCount == 0) 
             return;  // Ignore collision if the colliding bone is from the wrong hand or state has been reset
         
         // Update the pressure points of each touching OVRBoneCapsule
-        var newPressurePoint = CreatePressurePoint(in collision, in closestCapsule);
+        var newPressurePoint = CreatePressurePoint(in collision, in capsule);
     }
     
     private void OnCollisionExit(Collision collision)
     {
         // Find the OVRBone that best matches the colliding object
-        var closestCapsule = _handParser.GetBoneFromCollision(in collision);
-        if (closestCapsule is null) 
+        var capsule = _handParser.GetBoneFromCollision(in collision);
+        if (capsule is null) 
             return;  // If the colliding object is not an OVRBone
 
-        var boneWasTouching = _pressurePoints[closestCapsule.BoneIndex] != null;
+        var boneWasTouching = _pressurePoints[capsule.BoneIndex] != null;
         if (!boneWasTouching) 
             return;  // If the colliding bone was not previously touching
         
-        if (!IsBoneOnValidHand(in closestCapsule)) 
+        if (!IsBoneOnValidHand(in capsule)) 
             return;  // Ignore collision if the colliding bone is from the wrong hand
 
         // Remove the colliding OVRBone from list of touching bones and applied pressures
-        RemovePressurePoint(in closestCapsule);
+        RemovePressurePoint(in capsule);
         
         if (_pressurePointCount != 0)
         {
             // Make the bone kinematic briefly to reset position in relation to the rest of the hand
-            SetIsKinematic(in closestCapsule, true);
-            SetIsKinematic(in closestCapsule, false);
+            SetIsKinematic(in capsule, true);
+            SetIsKinematic(in capsule, false);
             return;
         }
 
@@ -160,8 +160,8 @@ public class PhysicalizedTouchable : MonoBehaviour, ITouchable
         return ref _pressurePoints;
     }
 
-    public int GetPressurePointCount()
+    public ref int GetPressurePointCount()
     {
-        return _pressurePointCount;
+        return ref _pressurePointCount;
     }
 }

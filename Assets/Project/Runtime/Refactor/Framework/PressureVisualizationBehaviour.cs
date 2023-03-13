@@ -2,14 +2,12 @@ using System.Linq;
 using UnityEngine;
 
 [RequireComponent(typeof(ITouchable))]
-// [RequireComponent(typeof(IGrabbable))]
 [RequireComponent(typeof(Renderer))]
-public class PressureVisualizerBehaviour : MonoBehaviour
+public class PressureVisualizationBehaviour : MonoBehaviour
 {
     private static readonly int Color1 = Shader.PropertyToID("_Color");
     
     private ITouchable _touchable;
-    // private IGrabbable _grabbable;
     private Renderer _renderer;
     
     private int _lastCount;  // The number of touching bones in the previous frame update
@@ -17,7 +15,6 @@ public class PressureVisualizerBehaviour : MonoBehaviour
     private void Start()
     {
         _touchable = GetComponent<ITouchable>();
-        // _grabbable = GetComponent<IGrabbable>();
         _renderer = GetComponent<Renderer>();
     }
 

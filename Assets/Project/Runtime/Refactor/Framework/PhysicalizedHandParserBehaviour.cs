@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class PhysicalizedHandParser : MonoBehaviour, IHandParser
+public class PhysicalizedHandParserBehaviour : MonoBehaviour, IHandParser
 {
     private const float MatchingThreshold = 0.001f;
 
@@ -28,7 +28,7 @@ public class PhysicalizedHandParser : MonoBehaviour, IHandParser
             .Concat(instance.RightHandBoneCapsules)
             .ToList();
         
-        // NOTE: Initial disabling of kinematics is now done in PhysicalizedTouchable
+        // NOTE: Initial disabling of kinematics is now done in PhysicalizedTouchableBehaviour
     }
 
     public ref readonly List<OVRBone> GetBones()
@@ -41,7 +41,7 @@ public class PhysicalizedHandParser : MonoBehaviour, IHandParser
         return ref _boneCapsules;
     }
     
-    public OVRBoneCapsule GetBoneFromCollision(in Collision collision)  // ref OVRBoneCapsule resultCapsule
+    public OVRBoneCapsule GetBoneFromCollision(in Collision collision)
     {
         // Find the OVRBone that best matches the colliding object
         var smallestDistance = float.MaxValue;
@@ -89,9 +89,4 @@ public class PhysicalizedHandParser : MonoBehaviour, IHandParser
                 "Parameter cannot be greater than the number of bone capsules or less than zero");
         return index < GetBones().Count / 2;
     }
-
-    // public bool IsInitialized()
-    // {
-    //     return GetBones() != null;
-    // }
 }
