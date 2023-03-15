@@ -2,11 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(IHandParser))]
+[RequireComponent(typeof(IPressurePointProvider))]
 [RequireComponent(typeof(Collider))]
 [RequireComponent(typeof(Rigidbody))]
-public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
+public class PhysicalizedTouchable : MonoBehaviour, ITouchable
 {
-    private PhysicalizedHandParserBehaviour _handParser;
+    private IHandParser _handParser;
+    private IPressurePointProvider _pressurePointProvider;
+    
     private PressurePoint?[] _allPressurePoints;
     private List<PressurePoint> _activePressurePoints;
 
@@ -14,12 +17,10 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
 
     private void Start()
     {
-        _handParser = GetComponent<PhysicalizedHandParserBehaviour>();  // Tight coupling is required in this case
+        _handParser = GetComponent<IHandParser>();
+        _pressurePointProvider = GetComponent<IPressurePointProvider>();
         
         ResetPressurePoints();
-        
-        // while (!_handParser.IsInitialized()) yield return null;
-        SetIsKinematic(false);
     }
 
     private void ResetPressurePoints(bool doSoftReset = false)
@@ -31,19 +32,7 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
         }
         _activeHand = OVRPlugin.Hand.None;
     }
-    
-    private void SetIsKinematic(bool state)
-    {
-        // Loop through all Rigidbodies on all OVRBoneCapsules and update their state
-        foreach (var boneCapsule in _handParser.GetBoneCapsules())
-            SetIsKinematic(in boneCapsule, state);
-    }
-    
-    private static void SetIsKinematic(in OVRBoneCapsule capsule, bool state)
-    {
-        capsule.CapsuleRigidbody.isKinematic = state;
-    }
-    
+
     private void OnCollisionEnter(Collision collision)
     {
         // Add the closest matching OVRBone to list of touching bones
@@ -52,17 +41,9 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
             return;  // Don't add a bone that doesn't exist or is already touching
         
         if (!IsBoneOnValidHand(in capsule))
-        {
             // Clear state and return if the colliding hand is not the hand currently touching
             ResetPressurePoints();
-            
-            SetIsKinematic(in capsule, true);
-            SetIsKinematic(in capsule, false);
-            
-            return;
-        }
-
-        AddPressurePoint(in collision, in capsule);
+        else AddPressurePoint(in collision, in capsule);
     }
 
     private bool IsBoneOnValidHand(in OVRBoneCapsule capsule)
@@ -76,7 +57,7 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
     
     private void AddPressurePoint(in Collision collision, in OVRBoneCapsule capsule)
     {
-        var newPressurePoint = CreatePressurePoint(in collision, in capsule);
+        var newPressurePoint = GetPressurePointFromCollision(in collision, in capsule);
         _allPressurePoints[newPressurePoint.Capsule.BoneIndex] = newPressurePoint;
         
         _activePressurePoints.Add(newPressurePoint);
@@ -88,34 +69,12 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
                 : OVRPlugin.Hand.HandRight;
     }
 
-    private PressurePoint CreatePressurePoint(in Collision collision, in OVRBoneCapsule capsule)
+    private PressurePoint GetPressurePointFromCollision(in Collision collision, in OVRBoneCapsule capsule)
     {
         var contactPoint = collision.contacts[0].point;
-        var newPressurePoint = new PressurePoint(GetPressureVector(in capsule), in contactPoint, in capsule);
-
-        return newPressurePoint;
+        return _pressurePointProvider.GetPressurePoint(in contactPoint, in capsule);
     }
 
-    private Vector3 GetPressureVector(in OVRBoneCapsule capsule)
-    {
-        // Define OVRBone and OVRBoneCapsule for comparison
-        var capsulePosition = capsule.CapsuleRigidbody.position;
-        var bone = _handParser.GetBones()[_handParser.GetBoneIndex(in capsule)];
-        var bonePosition = bone.Transform.position;
-        
-        // Compare the two bones
-        var differenceVector = bonePosition - capsulePosition;
-        
-        // Scale and clamp the differenceVector 
-        var localTransform = transform;
-        var r = localTransform.localScale.x;
-        var d = Mathf.Sqrt((bonePosition - localTransform.position).sqrMagnitude);
-        var pressure = Mathf.Clamp(r - d, 0, r) / r;
-        var resultVector = differenceVector.normalized * pressure;
-
-        return resultVector;
-    }
-    
     private void OnCollisionStay(Collision collision)
     {
         // Find matching bone
@@ -126,7 +85,7 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
             return;  // Ignore collision if the colliding bone is from the wrong hand or state has been reset
         
         // Define new PressurePoint to replace the previous one
-        var newPressurePoint = CreatePressurePoint(in collision, in capsule);
+        var newPressurePoint = GetPressurePointFromCollision(in collision, in capsule);
 
         // Update list of active points
         var currentPressurePoint = _allPressurePoints[capsule.BoneIndex]!.Value;
@@ -153,18 +112,6 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
 
         // Remove the colliding OVRBone from list of touching bones and applied pressures
         RemovePressurePoint(in capsule);
-        
-        if (_activePressurePoints.Count > 0)
-        {
-            // Make the bone kinematic briefly to reset position in relation to the rest of the hand
-            SetIsKinematic(in capsule, true);
-            SetIsKinematic(in capsule, false);
-            return;
-        }
-
-        // If no bones are touching anymore we do the same for all bones in the hand, even those that haven't directly touched the object
-        SetIsKinematic(true);
-        SetIsKinematic(false);
     }
 
     private void RemovePressurePoint(in OVRBoneCapsule capsule)

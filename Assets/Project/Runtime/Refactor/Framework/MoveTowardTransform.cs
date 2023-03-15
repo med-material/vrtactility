@@ -2,7 +2,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(IGrabbable))]
 [RequireComponent(typeof(Rigidbody))]
-public class MoveTowardTransformBehaviour : MonoBehaviour
+public class MoveTowardTransform : MonoBehaviour
 {
     public Transform targetTransform;
     public float baseForce;

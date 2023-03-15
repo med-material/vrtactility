@@ -2,7 +2,7 @@ using System.Linq;
 using UnityEngine;
 
 [RequireComponent(typeof(ITouchable))]
-public class UniformGrabbableBehaviour : MonoBehaviour, IGrabbable
+public class MaxGrabbable : MonoBehaviour, IGrabbable
 {
     [Tooltip("The amount of pressure required for grabbing.")]
     [Range(0.1f, 1.0f)] public float pressureThreshold;

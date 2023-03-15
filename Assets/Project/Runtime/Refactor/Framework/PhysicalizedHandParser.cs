@@ -1,10 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class PhysicalizedHandParserBehaviour : MonoBehaviour, IHandParser
+public class PhysicalizedHandParser : MonoBehaviour, IHandParser
 {
     private const float MatchingThreshold = 0.001f;
 
@@ -15,8 +14,7 @@ public class PhysicalizedHandParserBehaviour : MonoBehaviour, IHandParser
     {
         var instance = OVRInitializer.GetOVRInstanceContainer();
 
-        // Wait for OVR to initialize
-        // while (!instance.IsPopulated()) yield return null;
+        // NOTE: It is assumed that this object is only allowed to start after OVR has finished initializing
 
         // Import OVR Bones
         _bones = instance.LeftHandBones
@@ -28,7 +26,7 @@ public class PhysicalizedHandParserBehaviour : MonoBehaviour, IHandParser
             .Concat(instance.RightHandBoneCapsules)
             .ToList();
         
-        // NOTE: Initial disabling of kinematics is now done in PhysicalizedTouchableBehaviour
+        // NOTE: Initial disabling of kinematics is now done in PhysicalizedTouchable
     }
 
     public ref readonly List<OVRBone> GetBones()

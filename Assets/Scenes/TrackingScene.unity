@@ -494,6 +494,8 @@ GameObject:
   - component: {fileID: 1510593429}
   - component: {fileID: 1510593438}
   - component: {fileID: 1510593437}
+  - component: {fileID: 1510593439}
+  - component: {fileID: 1510593440}
   m_Layer: 7
   m_Name: PhysicalizedSphere
   m_TagString: Untagged
@@ -659,6 +661,30 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pressureThreshold: 0.5
+--- !u!114 &1510593439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1510593428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3397ba824896eb47806d0a882e7faea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1510593440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1510593428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bc980d528e7819418d2b9bf54060a73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1582491687
 GameObject:
   m_ObjectHideFlags: 0

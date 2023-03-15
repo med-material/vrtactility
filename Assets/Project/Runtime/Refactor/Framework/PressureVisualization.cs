@@ -2,7 +2,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(ITouchable))]
 [RequireComponent(typeof(Renderer))]
-public class PressureVisualizationBehaviour : MonoBehaviour
+public class PressureVisualization : MonoBehaviour
 {
     private static readonly int Color1 = Shader.PropertyToID("_Color");
     
@@ -33,7 +33,7 @@ public class PressureVisualizationBehaviour : MonoBehaviour
             maxPressure = pressure;
         }
         
-        Debug.Log(maxPressure);
+        // Debug.Log(maxPressure);
         
         // Update sphere material color
         _renderer.material.SetColor(Color1, new Color(maxPressure, 0f, 0f));
