@@ -1,4 +1,3 @@
-using System.Linq;
 using UnityEngine;
 
 [RequireComponent(typeof(ITouchable))]
@@ -25,14 +24,16 @@ public class PressureVisualizationBehaviour : MonoBehaviour
         if (pressurePointCount + _lastCount == 0) return;
         _lastCount = pressurePointCount;
 
-        // Calculate total pressure being applied
-        var maxPressure = pressurePointCount > 0
-            ? _touchable.GetPressurePoints().Aggregate(0f, (current, p) =>
-            {
-                if (p.HasValue) return current + p.Value.Pressure.magnitude;
-                return current;
-            })
-            : 0f;
+        // Find the largest pressure value
+        var maxPressure = 0f;
+        foreach (var point in _touchable.GetActivePressurePoints())
+        {
+            var pressure = point.Pressure.magnitude;
+            if (pressure < maxPressure) continue;
+            maxPressure = pressure;
+        }
+        
+        Debug.Log(maxPressure);
         
         // Update sphere material color
         _renderer.material.SetColor(Color1, new Color(maxPressure, 0f, 0f));

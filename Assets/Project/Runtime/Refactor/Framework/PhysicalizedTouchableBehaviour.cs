@@ -1,4 +1,4 @@
-using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(IHandParser))]
@@ -7,10 +7,10 @@ using UnityEngine;
 public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
 {
     private PhysicalizedHandParserBehaviour _handParser;
-    private PressurePoint?[] _pressurePoints;
+    private PressurePoint?[] _allPressurePoints;
+    private List<PressurePoint> _activePressurePoints;
 
     private OVRPlugin.Hand _activeHand;
-    private int _pressurePointCount;
 
     private void Start()
     {
@@ -24,9 +24,12 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
 
     private void ResetPressurePoints(bool doSoftReset = false)
     {
-        if (!doSoftReset) _pressurePoints = new PressurePoint?[24];
+        if (!doSoftReset)
+        {
+            _allPressurePoints = new PressurePoint?[24];
+            _activePressurePoints = new List<PressurePoint>(24);
+        }
         _activeHand = OVRPlugin.Hand.None;
-        _pressurePointCount = 0;
     }
     
     private void SetIsKinematic(bool state)
@@ -45,7 +48,7 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
     {
         // Add the closest matching OVRBone to list of touching bones
         var capsule = _handParser.GetBoneFromCollision(in collision);
-        if (capsule is null || _pressurePoints[capsule.BoneIndex] != null) 
+        if (capsule is null || _allPressurePoints[capsule.BoneIndex] != null) 
             return;  // Don't add a bone that doesn't exist or is already touching
         
         if (!IsBoneOnValidHand(in capsule))
@@ -74,10 +77,10 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
     private void AddPressurePoint(in Collision collision, in OVRBoneCapsule capsule)
     {
         var newPressurePoint = CreatePressurePoint(in collision, in capsule);
-        _pressurePoints[newPressurePoint.Capsule.BoneIndex] = newPressurePoint;
-
-        _pressurePointCount++;
-
+        _allPressurePoints[newPressurePoint.Capsule.BoneIndex] = newPressurePoint;
+        
+        _activePressurePoints.Add(newPressurePoint);
+        
         var isCapsuleOnLeftHand = _handParser.IsIndexOnLeftHand(_handParser.GetBoneIndex(in capsule));
         if (_activeHand == OVRPlugin.Hand.None)
             _activeHand = isCapsuleOnLeftHand
@@ -95,12 +98,22 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
 
     private Vector3 GetPressureVector(in OVRBoneCapsule capsule)
     {
+        // Define OVRBone and OVRBoneCapsule for comparison
         var capsulePosition = capsule.CapsuleRigidbody.position;
-        
         var bone = _handParser.GetBones()[_handParser.GetBoneIndex(in capsule)];
         var bonePosition = bone.Transform.position;
+        
+        // Compare the two bones
+        var differenceVector = bonePosition - capsulePosition;
+        
+        // Scale and clamp the differenceVector 
+        var localTransform = transform;
+        var r = localTransform.localScale.x;
+        var d = Mathf.Sqrt((bonePosition - localTransform.position).sqrMagnitude);
+        var pressure = Mathf.Clamp(r - d, 0, r) / r;
+        var resultVector = differenceVector.normalized * pressure;
 
-        return bonePosition - capsulePosition;
+        return resultVector;
     }
     
     private void OnCollisionStay(Collision collision)
@@ -109,11 +122,19 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
         var capsule = _handParser.GetBoneFromCollision(in collision);
         if (capsule is null) return;  // If the colliding object is not a bone
         
-        if (!IsBoneOnValidHand(in capsule) || _pressurePointCount == 0) 
+        if (!IsBoneOnValidHand(in capsule) || _activePressurePoints.Count == 0) 
             return;  // Ignore collision if the colliding bone is from the wrong hand or state has been reset
         
-        // Update the pressure points of each touching OVRBoneCapsule
+        // Define new PressurePoint to replace the previous one
         var newPressurePoint = CreatePressurePoint(in collision, in capsule);
+
+        // Update list of active points
+        var currentPressurePoint = _allPressurePoints[capsule.BoneIndex]!.Value;
+        var currentIndex = _activePressurePoints.IndexOf(currentPressurePoint);
+        _activePressurePoints[currentIndex] = newPressurePoint;
+        
+        // Update bone-index list of points
+        _allPressurePoints[capsule.BoneIndex] = newPressurePoint;
     }
     
     private void OnCollisionExit(Collision collision)
@@ -123,7 +144,7 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
         if (capsule is null) 
             return;  // If the colliding object is not an OVRBone
 
-        var boneWasTouching = _pressurePoints[capsule.BoneIndex] != null;
+        var boneWasTouching = _allPressurePoints[capsule.BoneIndex] != null;
         if (!boneWasTouching) 
             return;  // If the colliding bone was not previously touching
         
@@ -133,7 +154,7 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
         // Remove the colliding OVRBone from list of touching bones and applied pressures
         RemovePressurePoint(in capsule);
         
-        if (_pressurePointCount != 0)
+        if (_activePressurePoints.Count > 0)
         {
             // Make the bone kinematic briefly to reset position in relation to the rest of the hand
             SetIsKinematic(in capsule, true);
@@ -148,20 +169,25 @@ public class PhysicalizedTouchableBehaviour : MonoBehaviour, ITouchable
 
     private void RemovePressurePoint(in OVRBoneCapsule capsule)
     {
-        _pressurePoints[capsule.BoneIndex] = null;
-
-        _pressurePointCount--;
+        _activePressurePoints.Remove(_allPressurePoints[capsule.BoneIndex]!.Value);
         
-        if (_pressurePointCount == 0) ResetPressurePoints(doSoftReset:true);
+        _allPressurePoints[capsule.BoneIndex] = null;
+
+        if (_activePressurePoints.Count == 0) ResetPressurePoints(doSoftReset:true);
     }
 
-    public ref readonly PressurePoint?[] GetPressurePoints()
+    public ref readonly PressurePoint?[] GetAllPressurePoints()
     {
-        return ref _pressurePoints;
+        return ref _allPressurePoints;
     }
 
-    public ref int GetPressurePointCount()
+    public ref readonly List<PressurePoint> GetActivePressurePoints()
     {
-        return ref _pressurePointCount;
+        return ref _activePressurePoints;
+    }
+
+    public int GetPressurePointCount()
+    {
+        return _activePressurePoints.Count;
     }
 }

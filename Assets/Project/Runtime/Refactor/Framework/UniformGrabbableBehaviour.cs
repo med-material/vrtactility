@@ -1,5 +1,7 @@
+using System.Linq;
 using UnityEngine;
 
+[RequireComponent(typeof(ITouchable))]
 public class UniformGrabbableBehaviour : MonoBehaviour, IGrabbable
 {
     [Tooltip("The amount of pressure required for grabbing.")]
@@ -19,25 +21,10 @@ public class UniformGrabbableBehaviour : MonoBehaviour, IGrabbable
 
     private void Update()
     {
-        var r = transform.localScale.x;
-        var pressurePoints = _touchable.GetPressurePoints();
+        var pressurePoints = _touchable.GetActivePressurePoints();
 
-        var maxPressure = float.MinValue;
-        var cumulativeGripVector = Vector3.zero;
-
-        foreach (var p in pressurePoints)
-        {
-            if (!p.HasValue) continue;
-
-            var distance = p.Value.Pressure.magnitude;
-            var pressure = Mathf.Clamp(r - distance, 0, r) / r;
-            if (pressure > maxPressure) maxPressure = pressure;
-
-            var contactPosition = p.Value.Point;
-            var gripVector = contactPosition - transform.position;
-            cumulativeGripVector += gripVector;
-        }
-
+        var cumulativeGripVector = pressurePoints
+            .Aggregate(Vector3.zero, (cumulativeVector, point) => cumulativeVector + point.Pressure);
         if (cumulativeGripVector == Vector3.zero)
         {
             _isGrabbed = false;
