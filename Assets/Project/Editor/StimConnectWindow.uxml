@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:IMGUIContainer>
+        <ui:Label text="Write the correct COM port" display-tooltip-when-elided="true" name="Desc" style="-unity-text-align: middle-center; height: 301px; opacity: 1;" />
+        <ui:TextField picking-mode="Ignore" label="COM Port" value="filler text" text="filler text" name="TextField" style="flex-direction: row; height: 39px; width: 355px; align-items: center; justify-content: flex-start;" />
+        <ui:Button text="Connect" display-tooltip-when-elided="true" name="Button" style="height: 101px; -unity-text-align: middle-center;" />
+    </ui:IMGUIContainer>
+</ui:UXML>

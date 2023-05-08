@@ -1,0 +1,46 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:VisualElement name="modables" style="height: 312px;">
+        <ui:VisualElement style="height: 172px; width: 343px; position: absolute;">
+            <ui:Label text="Amplitude" display-tooltip-when-elided="true" />
+            <ui:Toggle label="Active" name="Toggle" focusable="false" style="flex-direction: row-reverse; width: 171px;" />
+            <uie:IntegerField label="Active Step" value="0" />
+            <ui:Foldout text="Steps">
+                <uie:IntegerField label="1" value="10" />
+                <uie:IntegerField label="2" value="20" />
+                <uie:IntegerField label="3" value="30" />
+                <uie:IntegerField label="4" value="40" />
+                <uie:IntegerField label="5" value="50" />
+            </ui:Foldout>
+        </ui:VisualElement>
+        <ui:VisualElement style="height: 186px; position: absolute; top: 204px; width: 341px;">
+            <ui:Label text="Frequency" display-tooltip-when-elided="true" />
+            <ui:Toggle label="Active" name="Toggle" focusable="false" style="flex-direction: row-reverse; width: 171px;" />
+            <uie:IntegerField label="Active Step" value="0" />
+            <ui:Foldout text="Steps">
+                <uie:IntegerField label="1" value="10" />
+                <uie:IntegerField label="2" value="20" />
+                <uie:IntegerField label="3" value="30" />
+                <uie:IntegerField label="4" value="40" />
+                <uie:IntegerField label="5" value="50" />
+            </ui:Foldout>
+        </ui:VisualElement>
+        <ui:VisualElement style="align-items: stretch; justify-content: flex-start; flex-direction: column; height: 198px; position: absolute; top: 396px; width: 339px;">
+            <ui:Label text="Spatial" display-tooltip-when-elided="true" />
+            <ui:Toggle label="Active" name="Toggle" focusable="false" style="flex-direction: row-reverse; width: 171px;" />
+            <uie:IntegerField label="Active Step" value="0" />
+            <ui:Foldout text="Steps">
+                <uie:IntegerField label="1" value="10" />
+                <uie:IntegerField label="2" value="20" />
+                <uie:IntegerField label="3" value="30" />
+                <uie:IntegerField label="4" value="40" />
+                <uie:IntegerField label="5" value="50" />
+            </ui:Foldout>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="mods" style="height: 225px; width: 342px; position: absolute; top: 534px; left: 4px;">
+        <uie:CurveField label="Intensity Modifier" style="height: 144px; width: 343px; position: absolute; top: 75px;">
+            <ui:Label text="Out" display-tooltip-when-elided="true" style="-unity-text-align: middle-center;" />
+        </uie:CurveField>
+        <ui:Label text="In" display-tooltip-when-elided="true" style="-unity-text-align: upper-right; width: 250px; white-space: normal; height: 77px; position: absolute; top: 224px; left: 0;" />
+    </ui:VisualElement>
+</ui:UXML>
