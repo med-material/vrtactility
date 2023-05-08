@@ -56,12 +56,12 @@ public class UniformGrabbable : MonoBehaviour
         }
         
         // Update applied pressure for each touching bone if any
-        // TODO: Optimize this to only loop through finger tips
+        // NOTE: This loop can be optimzed to only consider particular bones like the finger tips
         for (var i = 0; i < _touchingBoneCapsules.Count; i++)
             touchingBonePressures[i] = GetAppliedPressure(_touchingBoneCapsules[i]);
 
         // Stop updating if the applied pressure is less than would be required to grib the object
-        // TODO: New pressure calculations must be reflected here...
+        // NOTE: If the above loop is changed, those changes must be reflected here, aswell as other places
         if (touchingBonePressures.Count > 0 && touchingBonePressures.Max() < pressureThreshold)
         {
             isGrabbed = false;
@@ -69,10 +69,8 @@ public class UniformGrabbable : MonoBehaviour
         }
 
         // Calculate union of all collision point vectors to indicate grip distribution
-        // TODO: This is probably a candidate for further optimizations...
-        var gripVector = _touchingPointVectors.Values
-            .Select(vector => vector - transform.position)
-            .Aggregate(Vector3.zero, (current, deltaVector) => current + deltaVector);
+        var gripVector = Vector3.zero;
+        foreach (Vector3 vec in _touchingPointVectors.Values) gripVector += vec - transform.position;
         if (gripVector == Vector3.zero)
         {
             isGrabbed = false;
