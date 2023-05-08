@@ -13,6 +13,8 @@ public class GoalObjectLogic : MonoBehaviour
     private UniformGrabbable _localGrabbable;
     private FixedJoint _localFixedJoint;
 
+    public bool hidden;
+
 
     // Start is called before the first frame update
     void Start()
@@ -52,23 +54,30 @@ public class GoalObjectLogic : MonoBehaviour
         }
 
     }
-    private int _lastCount = 0;  // The number of touching bones in the previous frame update
+    
     public float pres;//debug variable for reading pressure
     private void Update()
     {
-        if (_localGrabbable.touchingBonePressures.Count + _lastCount == 0) return;
-        _lastCount = _localGrabbable.touchingBonePressures.Count;
 
-        // Calculate total pressure being applied and update sphere material color
-        var maxPressure = _localGrabbable.touchingBonePressures.Count > 0
-            ? _localGrabbable.touchingBonePressures.Max()
-            : 0f;
-        pres = maxPressure;
-        
+        pres = _localGrabbable.getMaxPressure();
     }
 
     public bool pop()
     {
-        return pres >= 0.75f;
+        return pres >= 0.8f;
+    }
+
+    public void hideObject()
+    {
+        hidden = true;
+        GetComponent<Renderer>().enabled = false;
+        transform.position = new Vector3(100, 100, 100);
+    }
+
+    public void resetObject()
+    {
+        hidden = false;
+        GetComponent<Renderer>().enabled = true;
+        transform.position = _originPoint;
     }
 }

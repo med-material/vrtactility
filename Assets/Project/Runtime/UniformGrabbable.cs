@@ -23,7 +23,7 @@ public class UniformGrabbable : MonoBehaviour
 
     // Exposing touch
     [HideInInspector] public List<OVRSkeleton.BoneId> touchingBoneIds;
-    [HideInInspector] public List<float> touchingBonePressures;
+    public List<float> touchingBonePressures;
 
     // Exposing grab
     [HideInInspector] public bool isGrabbed = false;
@@ -84,10 +84,9 @@ public class UniformGrabbable : MonoBehaviour
             return;
         }
         gripVector /= _touchingPointVectors.Count;
-
         // Manage FreeFloatable in accordance with grip
         if (gripVector.magnitude < 0.014)
-            isGrabbed = true;
+            isGrabbed = true;            
         else if (gripVector.magnitude > 0.014)
             isGrabbed = false;
     }
@@ -132,6 +131,18 @@ public class UniformGrabbable : MonoBehaviour
 
         // Return distance as pressure applied
         return pressure;
+    }
+    private int _lastCount = 0;  // The number of touching bones in the previous frame update
+    public float getMaxPressure()
+    {
+        if (touchingBonePressures.Count + _lastCount == 0) return 0f;
+        _lastCount = touchingBonePressures.Count;
+
+        // Calculate total pressure being applied and update sphere material color
+        var maxPressure = touchingBonePressures.Count > 0
+            ? touchingBonePressures.Max()
+            : 0f;
+        return maxPressure;
     }
 
     private int GetBoneIndex(in OVRBoneCapsule boneCapsule)
