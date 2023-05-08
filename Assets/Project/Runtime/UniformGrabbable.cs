@@ -163,13 +163,8 @@ public class UniformGrabbable : MonoBehaviour
         if (!IsBoneOnValidHand(in closestBoneCapsule))
         {
             // Clear state and return if the colliding hand is not the hand currently touching
-            _touchingPointVectors.Clear();
-            _touchingBoneCapsules.Clear();
-            
-            touchingBoneIds.Clear();
-            touchingBonePressures.Clear();
-            isGrabbed = false;
-            
+            Clear();
+
             SetIsKinematic(in closestBoneCapsule, true);
             SetIsKinematic(in closestBoneCapsule, false);
             
@@ -189,6 +184,16 @@ public class UniformGrabbable : MonoBehaviour
         _touchingBoneCapsules.Add(closestBoneCapsule);
         touchingBoneIds.Add(boneId);
         touchingBonePressures.Add(GetAppliedPressure(in closestBoneCapsule));
+    }
+
+    private void Clear()
+    {
+        _touchingPointVectors.Clear();
+        _touchingBoneCapsules.Clear();
+
+        touchingBoneIds.Clear();
+        touchingBonePressures.Clear();
+        isGrabbed = false;
     }
 
     private bool IsBoneOnValidHand(in OVRBoneCapsule boneCapsule)
@@ -242,17 +247,16 @@ public class UniformGrabbable : MonoBehaviour
         if (!IsBoneOnValidHand(in closestBoneCapsule)) 
             return;  // Ignore collision if the colliding bone is from the wrong hand
 
-        // Remove the no-longer-colliding OVRBone
-        SwapRemove(in touchingIdx);
-        
-        if (_touchingBoneCapsules.Count != 0)
+        if (_touchingBoneCapsules.Count != 1)
         {
+            SwapRemove(in touchingIdx);  // Remove the no-longer-colliding OVRBone
+
             // Make the bone kinematic briefly to reset position in relation to the rest of the hand
             SetIsKinematic(in closestBoneCapsule, true);
             SetIsKinematic(in closestBoneCapsule, false);
             return;
         }
-        isGrabbed = false;
+        Clear();
         
         // If no bones are touching anymore we do the same for all bones in the hand, even those that haven't directly touched the object
         SetIsKinematic(true);
