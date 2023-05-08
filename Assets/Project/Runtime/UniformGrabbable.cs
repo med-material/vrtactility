@@ -69,7 +69,7 @@ public class UniformGrabbable : MonoBehaviour
         }
 
         // Calculate union of all collision point vectors to indicate grip distribution
-        // TODO: This is probably a condidate for further optimizations...
+        // TODO: This is probably a candidate for further optimizations...
         var gripVector = _touchingPointVectors.Values
             .Select(vector => vector - transform.position)
             .Aggregate(Vector3.zero, (current, deltaVector) => current + deltaVector);
@@ -213,14 +213,13 @@ public class UniformGrabbable : MonoBehaviour
     {
         // Find the OVRBone that best matches the colliding object
         OVRBoneCapsule closestBone = null;
-        var smallestDistance = float.MaxValue;
         foreach (var bone in _boneCapsules)
         {
             var distance = Vector3.Distance(bone.CapsuleCollider.transform.position, collision.transform.position);
-            if (distance > MATCHING_THRESHOLD || distance > smallestDistance) continue;  // NOTE: MATCHING_THRESHOLD check may be redundant
+            if (distance > MATCHING_THRESHOLD) continue;
         
             closestBone = bone;
-            smallestDistance = distance;
+            break;  // Breaking here means that MATCHING_THRESHOLD cannot be set too high
         }
 
         return closestBone;
@@ -238,16 +237,15 @@ public class UniformGrabbable : MonoBehaviour
         if (closestBoneCapsule is null) 
             return;  // If the colliding object is not an OVRBone
 
-        var boneWasTouching = _touchingBoneCapsules.Contains(closestBoneCapsule);
-        if (!boneWasTouching)
+        var touchingIdx = _touchingBoneCapsules.IndexOf(closestBoneCapsule);
+        if (touchingIdx == -1)
             return;  // If the colliding bone was not previously touching
         
         if (!IsBoneOnValidHand(in closestBoneCapsule)) 
             return;  // Ignore collision if the colliding bone is from the wrong hand
 
-        // Remove the colliding OVRBone from list of touching bones and applied pressures
-        var boneIdx = touchingBoneIds.IndexOf(GetBoneId(in closestBoneCapsule));
-        SwapRemove(in boneIdx);
+        // Remove the no-longer-colliding OVRBone
+        SwapRemove(in touchingIdx);
         
         if (_touchingBoneCapsules.Count != 0)
         {
