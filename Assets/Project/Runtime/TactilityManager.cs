@@ -6,6 +6,8 @@ using UnityEngine;
 
 public class TactilityManager : MonoBehaviour
 {
+    public SpatialStepsManager stepsManager;
+
     [Tooltip("Log outbound command strings to the console before they are transmitted.")] [SerializeField] 
     public bool logOutboundCommands = false;
     
@@ -22,7 +24,13 @@ public class TactilityManager : MonoBehaviour
 
     public Modality selectedModality;
     public AnimationCurve stepsCurve;
+    
+    [Range(0f, 1f)] public float debugVal;
 
+
+    [Range(0.1f, 1.3f)] public float freqAmpMod;
+
+    public bool UseDebugVal;
     public int updateVal(float inputVal)
     {
 
@@ -48,37 +56,41 @@ public class TactilityManager : MonoBehaviour
         var serialControllerGameObject = GameObject.Find("SerialController");
         _glovePort = serialControllerGameObject.GetComponent<SerialController>();
     }
-
+    
     private void Update()
     {
         if (_portWriteInProgress || _pads.Count == 0) return;
         
         // Update stimuli for each touching finger bone of interest
         var valueBatch = new float[5];
+        if (UseDebugVal) { valueBatch = new float[] { debugVal, debugVal, debugVal, debugVal, debugVal }; }
+        else {
         for (var i = 0; i < _ug.touchingBoneIds.Count; i++)
         {
             var pressure = _ug.touchingBonePressures[i];
             // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
-            switch (_ug.touchingBoneIds[i])
-            {
-                case OVRSkeleton.BoneId.Hand_Thumb3:
-                    valueBatch[0] = pressure;
-                    break;
-                case OVRSkeleton.BoneId.Hand_Index3:
-                    valueBatch[1] = pressure;
-                    break;
-                case OVRSkeleton.BoneId.Hand_Middle3:
-                    valueBatch[2] = pressure;
-                    break;
-                case OVRSkeleton.BoneId.Hand_Ring3:
-                    valueBatch[3] = pressure;
-                    break;
-                case OVRSkeleton.BoneId.Hand_Pinky3:
-                    valueBatch[4] = pressure;
-                    break;
+            
+                switch (_ug.touchingBoneIds[i])
+                {
+                    case OVRSkeleton.BoneId.Hand_Thumb3:
+                        valueBatch[0] = pressure;
+                        break;
+                    case OVRSkeleton.BoneId.Hand_Index3:
+                        valueBatch[1] = pressure;
+                        break;
+                    case OVRSkeleton.BoneId.Hand_Middle3:
+                        valueBatch[2] = pressure;
+                        break;
+                    case OVRSkeleton.BoneId.Hand_Ring3:
+                        valueBatch[3] = pressure;
+                        break;
+                    case OVRSkeleton.BoneId.Hand_Pinky3:
+                        valueBatch[4] = pressure;
+                        break;
+                }
             }
-        }
-
+        }   
+        
         // Avoid invoking the stimulator if there are no pressure values to transmit
         if (valueBatch.All(value => value == 0))
         {
@@ -158,9 +170,7 @@ public class TactilityManager : MonoBehaviour
     List<int> l4 = new List<int> { 1, 2, 3, 5, 7, 9, 10, 11, 13, 15, 22, 23, 24, 26, 27, 28, 29, 31, 32 };
     private List<int> getLevelPads()
     {
-        
-
-        int lv = updateVal(_ug.getMaxPressure());
+        int lv = updateVal(debugVal);
         //print("LV: " + lv);
         switch (lv)
         {
@@ -168,7 +178,7 @@ public class TactilityManager : MonoBehaviour
             case 2: alv = l2; break;
             case 3: alv = l3; break;
             case 4: alv = l4; break;
-            default: alv = l1; break;
+            default: alv = new List<int>(); break;
         }
         print("size: "+alv.Count);
         return alv;
@@ -185,8 +195,8 @@ public class TactilityManager : MonoBehaviour
         var variablePart1 = "";
         var variablePart2 = "";
         var variablePart3 = "";
-        List<int> activeLevel = getLevelPads();
-        foreach (int i in activeLevel)
+        int[] activeLevel = stepsManager.getLevelPads(debugVal).ToArray();
+        for (var i = 0; i < activeLevel.Length; i++)
         {
             // Use remap value to determine which finger pressure value we use
             var pressureValue = i switch
@@ -197,12 +207,12 @@ public class TactilityManager : MonoBehaviour
                 < 31 => pressureValues[3],
                 _ => pressureValues[4]  // == 31
             };
-
+            if (pressureValue <= 0) continue;
             // Ignore pads to implicitly assign them as Anodes
             if (i is 1 or 2 or 9 or 10 or 11 or 12 or 23 or 28)
                 continue;
 
-            var amplitudeValue = GetConstrainedValue(_pads[i].GetAmplitude() * _ug.getMaxPressure());
+            var amplitudeValue = GetConstrainedValue(_pads[i].GetAmplitude());
 
             variablePart1 += _pads[i].GetRemap() + "=C,";
             variablePart2 += _pads[i].GetRemap() + "=" + amplitudeValue + ",";
@@ -243,15 +253,16 @@ public class TactilityManager : MonoBehaviour
                 < 31 => pressureValues[3],
                 _ => pressureValues[4]  // == 31
             };
-
+            if (pressureValue <= 0) continue;
             // Ignore pads to implicitly assign them as Anodes
             if (i is 1 or 2 or 9 or 10 or 11 or 12 or 23 or 28)
                 continue;
 
-            var amplitudeValue = GetConstrainedValue(_pads[i].GetAmplitude() * updateVal(_ug.getMaxPressure()));
+
+            var amplitudeValue = GetConstrainedValue(_pads[i].GetAmplitude() * freqAmpMod);
 
             variablePart1 += _pads[i].GetRemap() + "=C,";
-            variablePart2 += _pads[i].GetRemap() + "=" + _pads[i].GetAmplitude() + ",";
+            variablePart2 += _pads[i].GetRemap() + "=" + amplitudeValue + ",";
             variablePart3 += _pads[i].GetRemap() + "=" + _pads[i].GetPulseWidth() + ",";
         }
         updateFreq();
@@ -269,7 +280,7 @@ public class TactilityManager : MonoBehaviour
     void updateFreq()
     {
         int freq = Mathf.RoundToInt(_pads[1].GetFrequency() * _ug.getMaxPressure());
-        int freqclamp = Mathf.Clamp(freq, 1, 200);
+        int freqclamp = Mathf.Clamp(freq, 10, 200);
         string command = "freq " + freqclamp;
         WriteToPort(command);
     }

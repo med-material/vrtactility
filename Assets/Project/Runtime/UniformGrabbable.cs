@@ -77,7 +77,6 @@ public class UniformGrabbable : MonoBehaviour
             return;
         }
         gripVector /= _touchingPointVectors.Count;
-
         // Manage FreeFloatable in accordance with grip
         if (gripVector.magnitude < 0.014)
             isGrabbed = true;            
