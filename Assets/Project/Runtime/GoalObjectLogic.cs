@@ -7,7 +7,7 @@ using UnityEngine;
 public class GoalObjectLogic : MonoBehaviour
 {
     private Rigidbody _rigidbody;
-    private Vector3 _originPoint;
+    public Vector3 _originPoint;
     private float _originDistanceFromCenter;
 
     private UniformGrabbable _localGrabbable;

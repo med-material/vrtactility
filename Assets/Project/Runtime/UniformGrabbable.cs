@@ -31,7 +31,7 @@ public class UniformGrabbable : MonoBehaviour
     private void Start()
     {
         _sphereCollider = GetComponent<SphereCollider>();
-        
+
         _touchingBoneCapsules = new List<OVRBoneCapsule>(24);
         _touchingPointVectors = new Dictionary<OVRSkeleton.BoneId, Vector3>(24);
     }
@@ -54,7 +54,7 @@ public class UniformGrabbable : MonoBehaviour
                 .Concat(handInitializer.fingerBonesRightH)
                 .ToList();
         }
-        
+
         // Update applied pressure for each touching bone if any
         // NOTE: This loop can be optimzed to only consider particular bones like the finger tips
         for (var i = 0; i < _touchingBoneCapsules.Count; i++)
@@ -77,9 +77,10 @@ public class UniformGrabbable : MonoBehaviour
             return;
         }
         gripVector /= _touchingPointVectors.Count;
+
         // Manage FreeFloatable in accordance with grip
         if (gripVector.magnitude < 0.014)
-            isGrabbed = true;            
+            isGrabbed = true;
         else if (gripVector.magnitude > 0.014)
             isGrabbed = false;
     }
@@ -89,10 +90,10 @@ public class UniformGrabbable : MonoBehaviour
         // Find matching bone
         var closestBoneCapsule = FindMatchingBone(in collision);
         if (closestBoneCapsule is null) return;  // If the colliding object is not a bone
-        
-        if (!IsBoneOnValidHand(in closestBoneCapsule) || _touchingBoneCapsules.Count == 0) 
+
+        if (!IsBoneOnValidHand(in closestBoneCapsule) || _touchingBoneCapsules.Count == 0)
             return;  // Ignore collision if the colliding bone is from the wrong hand or state has been reset
-        
+
         // Update the contact points of each touching OVRBoneCapsule
         var boneId = GetBoneId(in closestBoneCapsule);
         _touchingPointVectors[boneId] = collision.contacts[0].point;
@@ -104,7 +105,7 @@ public class UniformGrabbable : MonoBehaviour
         foreach (var boneCapsule in _boneCapsules)
             SetIsKinematic(in boneCapsule, in state);
     }
-    
+
     private static void SetIsKinematic(in OVRBoneCapsule boneCapsule, in bool state)
     {
         boneCapsule.CapsuleRigidbody.isKinematic = state;
@@ -113,7 +114,7 @@ public class UniformGrabbable : MonoBehaviour
     private float GetAppliedPressure(in OVRBoneCapsule boneCapsule)
     {
         var r = _sphereCollider.transform.localScale.x;
-        
+
         // Find corresponding OVRBone (which doesn't collide with the sphere surface) and its position
         var targetBone = _bones[GetBoneIndex(in boneCapsule)];
         var bonePosition = targetBone.Transform.position;
@@ -146,7 +147,7 @@ public class UniformGrabbable : MonoBehaviour
 
         return indexOffset + boneCapsule.BoneIndex;
     }
-    
+
     private bool IsIndexOnLeftHand(in int index)
     {
         return index < _bones.Count / 2;
@@ -156,9 +157,9 @@ public class UniformGrabbable : MonoBehaviour
     {
         // Add the closest matching OVRBone to list of touching bones
         var closestBoneCapsule = FindMatchingBone(in collision);
-        if (closestBoneCapsule is null || IsTouching(closestBoneCapsule)) 
+        if (closestBoneCapsule is null || IsTouching(closestBoneCapsule))
             return;  // Don't add a bone that doesn't exist or is already touching
-        
+
         if (!IsBoneOnValidHand(in closestBoneCapsule))
         {
             // Clear state and return if the colliding hand is not the hand currently touching
@@ -166,7 +167,7 @@ public class UniformGrabbable : MonoBehaviour
 
             SetIsKinematic(in closestBoneCapsule, true);
             SetIsKinematic(in closestBoneCapsule, false);
-            
+
             return;
         }
 
@@ -198,15 +199,15 @@ public class UniformGrabbable : MonoBehaviour
     private bool IsBoneOnValidHand(in OVRBoneCapsule boneCapsule)
     {
         if (_touchingBoneCapsules.Count == 0) return true;
-        
+
         var collidingBoneIndex = GetBoneIndex(in boneCapsule);
         var firstTouchingBoneIndex = GetBoneIndex(_touchingBoneCapsules[0]);
-        
+
         return IsIndexOnLeftHand(in collidingBoneIndex) == IsIndexOnLeftHand(in firstTouchingBoneIndex);
     }
 
     private OVRSkeleton.BoneId GetBoneId(in OVRBoneCapsule boneCapsule)
-    {   
+    {
         return _bones[boneCapsule.BoneIndex].Id;
     }
 
@@ -219,7 +220,7 @@ public class UniformGrabbable : MonoBehaviour
         {
             var distance = Vector3.Distance(bone.CapsuleCollider.transform.position, collision.transform.position);
             if (distance > MATCHING_THRESHOLD) continue;
-        
+
             closestBone = bone;
             break;  // Breaking here means that MATCHING_THRESHOLD cannot be set too high
         }
@@ -236,14 +237,14 @@ public class UniformGrabbable : MonoBehaviour
     {
         // Find the OVRBone that best matches the colliding object
         var closestBoneCapsule = FindMatchingBone(in collision);
-        if (closestBoneCapsule is null) 
+        if (closestBoneCapsule is null)
             return;  // If the colliding object is not an OVRBone
 
         var touchingIdx = _touchingBoneCapsules.IndexOf(closestBoneCapsule);
         if (touchingIdx == -1)
             return;  // If the colliding bone was not previously touching
-        
-        if (!IsBoneOnValidHand(in closestBoneCapsule)) 
+
+        if (!IsBoneOnValidHand(in closestBoneCapsule))
             return;  // Ignore collision if the colliding bone is from the wrong hand
 
         if (_touchingBoneCapsules.Count != 1)
@@ -256,7 +257,7 @@ public class UniformGrabbable : MonoBehaviour
             return;
         }
         Clear();
-        
+
         // If no bones are touching anymore we do the same for all bones in the hand, even those that haven't directly touched the object
         SetIsKinematic(true);
         SetIsKinematic(false);
@@ -266,7 +267,7 @@ public class UniformGrabbable : MonoBehaviour
     public Rigidbody GetTouchingHandRoot()
     {
         if (_touchingBoneCapsules.Count == 0) return null;
-        
+
         // Although GetBoneIndex returns _bones index and not _boneCapsules, we're still free to pipe it in to the left hand check
         return IsIndexOnLeftHand(GetBoneIndex(_touchingBoneCapsules[0]))
             ? _boneCapsules[0].CapsuleRigidbody
