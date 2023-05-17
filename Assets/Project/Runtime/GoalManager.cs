@@ -6,9 +6,12 @@ using TMPro;
 public class GoalManager : MonoBehaviour
 {
 
+    public Transform rightHand;
+    public Transform leftHand;
+
     public TextMeshProUGUI counterText;
     public TextMeshProUGUI msgText;
-    public GameObject gameObject;
+    public GameObject goalObject;
     public ParticleSystem particleSystem;
     public float goalDiff;
     public int totalScore = 0;
@@ -24,15 +27,15 @@ public class GoalManager : MonoBehaviour
     void Start()
     {
         animator = GetComponent<Animator>();
-        originPos = gameObject.transform.position;
-        gl = gameObject.GetComponent<GoalObjectLogic>();
+        originPos = goalObject.transform.position;
+        gl = goalObject.GetComponent<GoalObjectLogic>();
     }
 
     // Update is called once per frame
     void Update()
     {
         //if (animator.GetCurrentAnimatorClipInfo(0).Length != 0) return;
-            currentPos = gameObject.transform.position;
+            currentPos = goalObject.transform.position;
         if (currentPos == originPos|| gl.hidden) return;
         diff = Mathf.Abs(currentPos.y - originPos.y);
         if (diff >= goalDiff)
@@ -44,10 +47,38 @@ public class GoalManager : MonoBehaviour
             animator.Play("Fail");
         }
     }
+#if UNITY_EDITOR
+    public bool moveGoalObjectToRightHand = false;
+    private void moveToRightHand()
+    {
+        goalObject.transform.position = rightHand.position + new Vector3(0, 0.15f, 0);
+        gl._originPoint = goalObject.transform.position;
+        originPos = goalObject.transform.position;
+    }
+    public bool moveGoalObjectToLeftHand = false;
+    private void moveToLeftHand()
+    {
+        goalObject.transform.position = leftHand.position + new Vector3(0, 0.15f, 0);
+        gl._originPoint = goalObject.transform.position;
+        originPos = goalObject.transform.position;
+    }
+    private void OnValidate()
+    {
+        if (moveGoalObjectToRightHand)
+        {
+            moveToRightHand();
+            moveGoalObjectToRightHand = false;
+        }
+        if (moveGoalObjectToLeftHand)
+        {
+            moveToLeftHand();
+            moveGoalObjectToLeftHand = false;
+        }
+
+    }
 
 
-
-
+#endif
     public void incrementCorrects()
     {
         corrects++;

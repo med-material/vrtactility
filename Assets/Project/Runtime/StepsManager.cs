@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SpatialStepsManager : MonoBehaviour
+public class StepsManager : MonoBehaviour
 {
     public List<int> alv;
     List<int> l1 = new List<int> { 1, 9, 22, 27, 32 };
@@ -10,15 +10,22 @@ public class SpatialStepsManager : MonoBehaviour
     List<int> l3 = new List<int> { 1, 2, 3, 5, 9, 10, 11, 13, 22, 23, 24, 27, 28, 29, 32 };
     List<int> l4 = new List<int> { 1, 2, 3, 5, 7, 9, 10, 11, 13, 15, 22, 23, 24, 26, 27, 28, 29, 31, 32 };
     public AnimationCurve stepsCurve;
-    private int updateVal(float inputVal)
+    public int updateValInt(float inputVal)
     {
 
         var predisplayVal = stepsCurve.Evaluate(inputVal) * 4;
         return Mathf.RoundToInt(predisplayVal);
     }
+
+    public float updateValFloat(float inputVal)
+    {
+
+        var predisplayVal = stepsCurve.Evaluate(inputVal);
+        return predisplayVal;
+    }
     public List<int> getLevelPads(float inputVal)
     {
-        int lv = updateVal(inputVal);
+        int lv = updateValInt(inputVal);
         //print("LV: " + lv);
         switch (lv)
         {

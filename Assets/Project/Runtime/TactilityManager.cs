@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class TactilityManager : MonoBehaviour
 {
-    public SpatialStepsManager stepsManager;
+    public StepsManager stepsManager;
 
     [Tooltip("Log outbound command strings to the console before they are transmitted.")] [SerializeField] 
     public bool logOutboundCommands = false;
@@ -23,20 +23,16 @@ public class TactilityManager : MonoBehaviour
     public enum Modality {Amplitude, Frequency, Spatial}
 
     public Modality selectedModality;
-    public AnimationCurve stepsCurve;
+    public AnimationCurve PadAttenuationCurve;
     
     [Range(0f, 1f)] public float debugVal;
-
-
     [Range(0.1f, 1.3f)] public float freqAmpMod;
 
-    public bool UseDebugVal;
-    public int updateVal(float inputVal)
-    {
+    [SerializeField]
+    private int activepads;
 
-        var predisplayVal = stepsCurve.Evaluate(inputVal) * 4;
-        return Mathf.RoundToInt(predisplayVal);
-    }
+    public bool UseDebugVal;
+
 
     private void Awake()
     {
@@ -163,26 +159,6 @@ public class TactilityManager : MonoBehaviour
                          + finalPart;
         return completeString;
     }
-    public List<int> alv;
-    List<int> l1 = new List<int> { 1, 9, 22, 27, 32 };
-    List<int> l2 = new List<int> { 1, 2, 9, 10, 22, 23, 27, 28, 32 };
-    List<int> l3 = new List<int> { 1, 2, 3, 5, 9, 10, 11, 13, 22, 23, 24, 27, 28, 29, 32 };
-    List<int> l4 = new List<int> { 1, 2, 3, 5, 7, 9, 10, 11, 13, 15, 22, 23, 24, 26, 27, 28, 29, 31, 32 };
-    private List<int> getLevelPads()
-    {
-        int lv = updateVal(debugVal);
-        //print("LV: " + lv);
-        switch (lv)
-        {
-            case 1: alv = l1; break;
-            case 2: alv = l2; break;
-            case 3: alv = l3; break;
-            case 4: alv = l4; break;
-            default: alv = new List<int>(); break;
-        }
-        print("size: "+alv.Count);
-        return alv;
-    }
     private string GenerateCommandStringSpatial(IReadOnlyList<float> pressureValues) 
     {
         var completeString = "";
@@ -195,7 +171,9 @@ public class TactilityManager : MonoBehaviour
         var variablePart1 = "";
         var variablePart2 = "";
         var variablePart3 = "";
-        int[] activeLevel = stepsManager.getLevelPads(debugVal).ToArray();
+
+        int[] activeLevel = stepsManager.getLevelPads(UseDebugVal?debugVal:_ug.getMaxPressure()).ToArray();
+        activepads = 0;
         for (var i = 0; i < activeLevel.Length; i++)
         {
             // Use remap value to determine which finger pressure value we use
@@ -208,11 +186,12 @@ public class TactilityManager : MonoBehaviour
                 _ => pressureValues[4]  // == 31
             };
             if (pressureValue <= 0) continue;
+            else activepads++;
             // Ignore pads to implicitly assign them as Anodes
             if (i is 1 or 2 or 9 or 10 or 11 or 12 or 23 or 28)
                 continue;
 
-            var amplitudeValue = GetConstrainedValue(_pads[i].GetAmplitude());
+            var amplitudeValue = (activepads == 0) ? 0.5f : GetConstrainedValue((_pads[i].GetAmplitude() * freqAmpMod) * PadAttenuationCurve.Evaluate(activepads) );
 
             variablePart1 += _pads[i].GetRemap() + "=C,";
             variablePart2 += _pads[i].GetRemap() + "=" + amplitudeValue + ",";
@@ -241,6 +220,8 @@ public class TactilityManager : MonoBehaviour
         var variablePart1 = "";
         var variablePart2 = "";
         var variablePart3 = "";
+        
+        activepads = 0;
 
         for (var i = 0; i < 32; i++)
         {
@@ -254,12 +235,13 @@ public class TactilityManager : MonoBehaviour
                 _ => pressureValues[4]  // == 31
             };
             if (pressureValue <= 0) continue;
+            else activepads++;
             // Ignore pads to implicitly assign them as Anodes
             if (i is 1 or 2 or 9 or 10 or 11 or 12 or 23 or 28)
                 continue;
 
 
-            var amplitudeValue = GetConstrainedValue(_pads[i].GetAmplitude() * freqAmpMod);
+            var amplitudeValue = (activepads > 0) ? 0.5f : GetConstrainedValue((_pads[i].GetAmplitude() * freqAmpMod)/activepads);
 
             variablePart1 += _pads[i].GetRemap() + "=C,";
             variablePart2 += _pads[i].GetRemap() + "=" + amplitudeValue + ",";
@@ -279,7 +261,7 @@ public class TactilityManager : MonoBehaviour
 
     void updateFreq()
     {
-        int freq = Mathf.RoundToInt(_pads[1].GetFrequency() * _ug.getMaxPressure());
+        int freq = Mathf.RoundToInt(_pads[1].GetFrequency() * stepsManager.updateValFloat(_ug.getMaxPressure()));
         int freqclamp = Mathf.Clamp(freq, 10, 200);
         string command = "freq " + freqclamp;
         WriteToPort(command);
@@ -293,7 +275,7 @@ public class TactilityManager : MonoBehaviour
         
         return clamped;
     }
-    
+
     private void WriteToPort(string command, int timeout = 100, Action callback = null)
     {
         _portWriteInProgress = true;
