@@ -64,6 +64,14 @@ public class UiManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Input.GetKey(KeyCode.RightArrow))
+        {
+            IncreaseAmplitude();
+        }
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            DecreaseAmplitude();
+        }
     }
 
     public void SelectPad()
