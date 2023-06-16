@@ -28,12 +28,61 @@ public class UniformGrabbable : MonoBehaviour
     // Exposing grab
     [HideInInspector] public bool isGrabbed = false;
 
+    public Func<string> getContacts;
+    public Func<string> getContactAmt;
+    public Func<string> getIsGrabbed;
+
+    private void Awake()
+    {
+        getContacts = contactData;
+        getIsGrabbed = () => { return "" + isGrabbed; };
+    }
+
+    string contactData()
+    {
+        var valueBatch = new string[5];
+        int amt = 0;
+        string resultString = "";
+        for (var i = 0; i < touchingBoneIds.Count; i++)
+        {
+            var pressure = touchingBonePressures[i];
+
+            switch (touchingBoneIds[i])
+            {
+                case OVRSkeleton.BoneId.Hand_Thumb3:
+                    valueBatch[0] = " " + pressure + ",";
+                    if (pressure > 0) amt++;
+                    break;
+                case OVRSkeleton.BoneId.Hand_Index3:
+                    valueBatch[1] = " " + pressure + ",";
+                    if (pressure > 0) amt++;
+                    break;
+                case OVRSkeleton.BoneId.Hand_Middle3:
+                    valueBatch[2] = " " + pressure + ",";
+                    if (pressure > 0) amt++;
+                    break;
+                case OVRSkeleton.BoneId.Hand_Ring3:
+                    valueBatch[3] = " " + pressure + ",";
+                    if (pressure > 0) amt++;
+                    break;
+                case OVRSkeleton.BoneId.Hand_Pinky3:
+                    valueBatch[4] = " " + pressure + ",";
+                    if (pressure > 0) amt++;
+                    break;
+            }
+        }
+        resultString = valueBatch[0] + valueBatch[1] + valueBatch[2] + valueBatch[3] + valueBatch[4] + ", " + amt;
+        return resultString;
+    }   
+
     private void Start()
     {
         _sphereCollider = GetComponent<SphereCollider>();
 
         _touchingBoneCapsules = new List<OVRBoneCapsule>(24);
         _touchingPointVectors = new Dictionary<OVRSkeleton.BoneId, Vector3>(24);
+        CSVLogger.instance.addNewData("THUMB,INDEX,MIDDLE,RING,PINKY,CONTACT AMOUNT",getContacts);
+        CSVLogger.instance.addNewData("GRABBED",getIsGrabbed);
     }
 
     private void Update()

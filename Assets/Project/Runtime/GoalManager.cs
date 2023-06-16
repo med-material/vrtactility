@@ -2,9 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System;
 
 public class GoalManager : MonoBehaviour
 {
+    public GameObject experimentSetup;
 
     public Transform rightHand;
     public Transform leftHand;
@@ -23,9 +25,19 @@ public class GoalManager : MonoBehaviour
     private GoalObjectLogic gl;
     Animator animator;
 
+    Func<string> getGoalInfo;
+    Func<string> getObjectPos;
     // Start is called before the first frame update
+    private void Awake()
+    {
+        getGoalInfo = () => { return "" + corrects + ", " + fails + ", " + totalScore; };
+        getObjectPos = () => { return ""+goalObject.transform.position.x + ":" + goalObject.transform.position.y + ":" + goalObject.transform.position.z; };
+
+    }
     void Start()
     {
+        CSVLogger.instance.addNewData("CORRECTS,FAILS,TOTAL ATTEMPTS", getGoalInfo);
+        CSVLogger.instance.addNewData("GOAL OBJECT POSITION",getObjectPos);
         animator = GetComponent<Animator>();
         originPos = goalObject.transform.position;
         gl = goalObject.GetComponent<GoalObjectLogic>();
@@ -51,14 +63,14 @@ public class GoalManager : MonoBehaviour
     public bool moveGoalObjectToRightHand = false;
     private void moveToRightHand()
     {
-        goalObject.transform.position = rightHand.position + new Vector3(0, 0.15f, 0);
+        experimentSetup.transform.position = rightHand.position + new Vector3(0, 0.15f, 0);
         gl._originPoint = goalObject.transform.position;
         originPos = goalObject.transform.position;
     }
     public bool moveGoalObjectToLeftHand = false;
     private void moveToLeftHand()
     {
-        goalObject.transform.position = leftHand.position + new Vector3(0, 0.15f, 0);
+        experimentSetup.transform.position = leftHand.position + new Vector3(0, 0.15f, 0);
         gl._originPoint = goalObject.transform.position;
         originPos = goalObject.transform.position;
     }
